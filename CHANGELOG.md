@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ## [v0.1.0]
-- Initial creation, moved from: https://github.com/xmidt-org/codex-deploy
+- Initial creation, moved from: https://github.com/xmidt-org/svalinn
+- Modified authentication to work with `bascule` package/repo
+- Refactored registerers
 
 [Unreleased]: https://github.com/xmidt-org/capacityset/compare/v0.1.0..HEAD
 [v0.1.0]: https://github.com/xmidt-org/capacityset/compare/0.0.0...v0.1.0
