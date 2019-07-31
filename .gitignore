@@ -15,6 +15,10 @@ coverage*
 # Ignore the vendor structure
 *vendor/
 
+# Ignore example binaries
+examples/configurableListener/configurableListener
+examples/basicListener/basicListener
+
 # Ignore the various build artifacts
 .ignore
 
