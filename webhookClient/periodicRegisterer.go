@@ -26,10 +26,14 @@ import (
 	"github.com/go-kit/kit/log"
 )
 
+// A Registerer attempts to register to a webhook.  If there is a problem, an
+// error is returned.
 type Registerer interface {
 	Register() error
 }
 
+// PeriodicRegisterer uses a register to attempt to register at an interval.
+// If there is a failure, it will be logged.
 type PeriodicRegisterer struct {
 	registerer           Registerer
 	registrationInterval time.Duration
@@ -41,6 +45,8 @@ var (
 	defaultLogger = log.NewNopLogger()
 )
 
+// NewPeriodicRegisterer creates a registerer that attempts to register at the
+// interval given.
 func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger) *PeriodicRegisterer {
 	if logger == nil {
 		logger = defaultLogger
@@ -52,14 +58,18 @@ func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger
 	}
 }
 
+// Register is just a wrapper to provide the regular Register functionality,
+// but generally the periodic registerer should be started and stopped.
 func (p *PeriodicRegisterer) Register() error {
 	return p.registerer.Register()
 }
 
+// Start begins the periodic webhook registration.
 func (p *PeriodicRegisterer) Start() {
 	go p.registerAtInterval()
 }
 
+// Stop stops the periodic webhook registration.
 func (p *PeriodicRegisterer) Stop() {
 	close(p.shutdown)
 }

@@ -43,10 +43,13 @@ type Acquirer interface {
 	Acquire() (string, error)
 }
 
+// SecretGetter gets the secret to use when hashing.  If getting the secret is
+// unsuccessful, an error can be returned.
 type SecretGetter interface {
 	GetSecret() (string, error)
 }
 
+// BasicRegisterer sends POST requests to register at the webhook URL provided.
 type BasicRegisterer struct {
 	requestTemplate webhook.W
 	registrationURL string
@@ -56,6 +59,8 @@ type BasicRegisterer struct {
 	secretGetter SecretGetter
 }
 
+// BasicConfig holds the configuration options for setting up a
+// BasicRegisterer.
 type BasicConfig struct {
 	Timeout         time.Duration
 	ClientTransport http.RoundTripper
@@ -63,6 +68,10 @@ type BasicConfig struct {
 	Request         webhook.W
 }
 
+// NewBasicRegisterer returns a basic registerer set up with the configuration
+// given.  If the acquirer or secretGetter are nil or certain configurations
+// are empty, an error will be returned.  Otherwise, some config values are
+// set to defaults if they are invalid and a basic registerer is returned.
 func NewBasicRegisterer(acquirer Acquirer, secret SecretGetter, config BasicConfig) (*BasicRegisterer, error) {
 	if acquirer == nil {
 		return nil, errors.New("nil Acquirer")
@@ -115,6 +124,8 @@ func NewBasicRegisterer(acquirer Acquirer, secret SecretGetter, config BasicConf
 	return &basic, nil
 }
 
+// Register registers to the webhook using the information the basic registerer
+// has.
 func (b *BasicRegisterer) Register() error {
 	secret, err := b.secretGetter.GetSecret()
 	if err != nil {

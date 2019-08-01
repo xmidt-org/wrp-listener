@@ -15,12 +15,17 @@ import (
 	"github.com/xmidt-org/bascule"
 )
 
-type HashTokenFactory struct {
+// H is the struct for the hashTokenFactory that can be used to validate that a
+// hash given matches the hash of the request body using the secret from the
+// SecretGetter.
+type H struct {
 	hashType     string
 	newFunc      func() hash.Hash
 	secretGetter SecretGetter
 }
 
+// codeError is an error that also returns the status code that should be given
+// in the response.
 type codeError struct {
 	code int
 	err  error
@@ -34,11 +39,15 @@ func (c codeError) StatusCode() int {
 	return c.code
 }
 
+// SecretGetter gets the secret to use when hashing.  If getting the secret is
+// unsuccessful, an error can be returned.
 type SecretGetter interface {
 	GetSecret() (string, error)
 }
 
-func (htf HashTokenFactory) ParseAndValidate(ctx context.Context, req *http.Request, _ bascule.Authorization, value string) (bascule.Token, error) {
+// ParseAndValidate takes the hash given and validates that it matches the body
+// hashed with the expected secret.
+func (htf H) ParseAndValidate(ctx context.Context, req *http.Request, _ bascule.Authorization, value string) (bascule.Token, error) {
 	if req.Body == nil {
 		return nil, codeError{http.StatusBadRequest, errors.New("Empty request body")}
 	}
@@ -71,9 +80,10 @@ func (htf HashTokenFactory) ParseAndValidate(ctx context.Context, req *http.Requ
 	return bascule.NewToken(htf.hashType, value, bascule.Attributes{}), nil
 }
 
-func New(hashType string, newHashFunc func() hash.Hash, secretGetter SecretGetter) (HashTokenFactory, error) {
+// New returns the hash token factory to be used to validate a request.
+func New(hashType string, newHashFunc func() hash.Hash, secretGetter SecretGetter) (H, error) {
 	if secretGetter == nil {
-		return HashTokenFactory{}, errors.New("nil secretGetter")
+		return H{}, errors.New("nil secretGetter")
 	}
-	return HashTokenFactory{hashType: hashType, newFunc: newHashFunc, secretGetter: secretGetter}, nil
+	return H{hashType: hashType, newFunc: newHashFunc, secretGetter: secretGetter}, nil
 }
