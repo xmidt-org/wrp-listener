@@ -19,9 +19,23 @@ authenticate messages received.  Registering to a webhook can be done directly
 or set up to run at an interval.  Message authentication is set up to work with 
 the [bascule](https://github.com/xmidt-org/bascule) library.
 
-## Install
+## Details
 
-Add details here.
+### Authentication
+
+Authentication is done using the bascule library: the token factory provided 
+in the `hashTokenFactory` package can be given to the bascule Constructor 
+middleware in order to verify that the hashed body given with a request is 
+valid and created with the expected secret.
+
+### Registering
+
+Registration happens through the `webhookClient` package, and can be set up for 
+manual registration or registration at an interval.  If the consumer of this 
+package decides when to register, an error is returned if registering a webhook 
+is not successful.  With registering at an interval, a logger can be provided.  
+Then, if an error occurs, the registerer will log it and then try again at the 
+next interval.
 
 ## Contributing
 
