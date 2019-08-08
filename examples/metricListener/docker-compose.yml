@@ -1,20 +1,20 @@
 version: '3.4'
 
 services:
-  # metriclistener:
-  #   image: listener:${LISTENER_VERSION}
-  #   container_name: metriclistener
-  #   restart: on-failure
-  #   ports:
-  #     - 7100:7100
-  #     - 7101:7101
-  #     - 7102:7102
-  #     - 7103:7103
-  #   volumes:
-  #     - ./docFiles/metricListener.yaml:/etc/metricListener/metricListener.yaml
-  #     - ./docFiles/public.pem:/etc/metricListener/public.pem
-  #   networks:
-  #     - back-tier
+  metriclistener:
+    image: listener:${LISTENER_VERSION}
+    container_name: metriclistener
+    restart: on-failure
+    ports:
+      - 7100:7100
+      - 7101:7101
+      - 7102:7102
+      - 7103:7103
+    volumes:
+      - ./docFiles/metricListener.yaml:/etc/metricListener/metricListener.yaml
+      - ./docFiles/public.pem:/etc/metricListener/public.pem
+    networks:
+      - back-tier
 
   prometheus:
     image: prom/prometheus

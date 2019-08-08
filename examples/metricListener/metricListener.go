@@ -64,7 +64,7 @@ type Config struct {
 	Endpoint                    string
 	ResponseCode                int
 	JWT                         acquire.JWTAcquirerOptions
-}    
+}
 
 func SetLogger(logger log.Logger) func(delegate http.Handler) http.Handler {
 	return func(delegate http.Handler) http.Handler {
