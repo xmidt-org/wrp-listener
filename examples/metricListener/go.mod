@@ -3,7 +3,6 @@ module github.com/xmidt-org/wrp-listener/examples/metricListener
 go 1.12
 
 require (
-	github.com/Comcast/webpa-common v1.3.0 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/c9s/goprocinfo v0.0.0-20190309065803-0b2ad9ac246b // indirect
 	github.com/go-kit/kit v0.8.0

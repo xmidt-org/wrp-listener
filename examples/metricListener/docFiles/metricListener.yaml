@@ -1,34 +1,30 @@
 ---
 primary:
-  address: ":443"
+  address: ":7100"
 pprof:
-  address: ":9999"
+  address: ":7102"
   readTimeout: "15s"
   idleTimeout: "15s"
 metric:
-  address: ":9390"
+  address: ":7103"
   metricsOptions:
     namespace: "test"
     subsystem: "listener"
   readTimeout: "15s"
   idleTimeout: "15s"
 log:
-  file: "/var/log/metricListener/metricListener.log"
+  file: "stdout"
   level: "INFO"
-  json: "true"
-# log:
-#   file: "stdout"
-#   level: "INFO"
-#   json: true
+  json: true
 
 authHeader: "X-Webpa-Signature"
 authDelimiter: "="
 webhookRequest:
   config:
-    url: "http://localhost:443/api/v1/endpoint"
+    url: "http://host.docker.internal:7100/api/v1/endpoint"
     secret: "super secret"
   events: ["device-status.*"]
-webhookRegistrationURL: "https://localhost:8090/api/v2/hook"
+webhookRegistrationURL: "https://127.0.0.1:6000/hook"
 webhookTimeout: "1m"
 webhookRegistrationInterval: "1m"
 endpoint: "/endpoint"
