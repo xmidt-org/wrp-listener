@@ -18,6 +18,7 @@ coverage*
 # Ignore example binaries
 examples/configurableListener/configurableListener
 examples/basicListener/basicListener
+examples/metricListener/metricListener
 
 # Ignore the various build artifacts
 .ignore
