@@ -19,6 +19,17 @@ authenticate messages received.  Registering to a webhook can be done directly
 or set up to run at an interval.  Message authentication is set up to work with 
 the [bascule](https://github.com/xmidt-org/bascule) library.
 
+## Table of Contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Details](#details)
+- [Contributing](#contributing)
+
+## Code of Conduct
+
+This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
+By participating, you agree to this Code.
+
 ## Details
 
 ### Authentication
