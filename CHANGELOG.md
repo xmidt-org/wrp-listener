@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Added travis automation for github releases [#13](https://github.com/xmidt-org/wrp-listener/pull/13)
 
 ## [v0.1.1]
 - Fixed go-kit version
