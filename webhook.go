@@ -17,7 +17,12 @@
 
 package webhook
 
-import "time"
+import (
+	"encoding/json"
+	"errors"
+	"net"
+	"time"
+)
 
 // W is the structure that represents the Webhook listener
 // data we share.
@@ -32,22 +37,22 @@ type W struct {
 
 	// The URL to notify when we cut off a client due to overflow.
 	// Optional, set to "" to disable behavior
-	FailureURL string `json:"failure_url"`
+	FailureURL string `json:"failure_ur,omitempty"`
 
 	// The list of regular expressions to match event type against.
-	Events []string `json:"events"`
+	Events []string `json:"events,omitempty"`
 
 	// Matcher type contains values to match against the metadata.
 	Matcher Matcher `json:"matcher,omitempty"`
 
 	// The specified duration for this hook to live
-	Duration time.Duration `json:"duration"`
+	Duration time.Duration `json:"duration,omitempty"`
 
 	// The absolute time when this hook is to be disabled
-	Until time.Time `json:"until"`
+	Until time.Time `json:"until,omitempty"`
 
 	// The address that performed the registration
-	Address string `json:"registered_from_address"`
+	Address string `json:"registered_from_address,omitempty"`
 }
 
 // Configuration for message delivery
@@ -56,7 +61,7 @@ type Config struct {
 	URL string `json:"url"`
 
 	// The content-type to set the messages to (unless specified by WRP).
-	ContentType string `json:"content_type"`
+	ContentType string `json:"content_type,omitempty"`
 
 	// The secret to use for the SHA1 HMAC.
 	// Optional, set to "" to disable behavior.
@@ -73,4 +78,68 @@ type Config struct {
 type Matcher struct {
 	// The list of regular expressions to match device id type against.
 	DeviceID []string `json:"device_id"`
+}
+
+func NewW(jsonString []byte, ip string) (w *W, err error) {
+	w = new(W)
+
+	err = json.Unmarshal(jsonString, w)
+	if err != nil {
+		var wa []W
+
+		err = json.Unmarshal(jsonString, &wa)
+		if err != nil {
+			return
+		}
+		w = &wa[0]
+	}
+
+	err = w.sanitize(ip)
+	if nil != err {
+		w = nil
+	}
+	return
+}
+
+func (w *W) sanitize(ip string) (err error) {
+
+	if "" == w.Config.URL {
+		err = errors.New("invalid Config URL")
+		return
+	}
+
+	if 0 == len(w.Events) {
+		err = errors.New("invalid events")
+		return
+	}
+
+	// TODO Validate content type ?  What about different types?
+
+	if 0 == len(w.Matcher.DeviceID) {
+		w.Matcher.DeviceID = []string{".*"} // match anything
+	}
+
+	if "" == w.Address && "" != ip {
+		// Record the IP address the request came from
+		host, _, _err := net.SplitHostPort(ip)
+		if nil != _err {
+			err = _err
+			return
+		}
+		w.Address = host
+	}
+
+	// always set duration to default
+	w.Duration = time.Minute * 5
+
+	if &w.Until == nil || w.Until.Equal(time.Time{}) {
+		w.Until = time.Now().Add(w.Duration)
+	}
+
+	return
+}
+
+// ID creates the canonical string identifing a WebhookListener
+func (w *W) ID() string {
+	return w.Config.URL
 }

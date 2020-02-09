@@ -1,6 +1,7 @@
 package retry
 
 import (
+	"context"
 	"github.com/cenkalti/backoff/v3"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/xmidt-org/wrp-go/wrp"
@@ -11,7 +12,7 @@ import (
 
 type retryConfig struct {
 	backoffConfig backoff.ExponentialBackOff
-	measures      Measures
+	measures      *Measures
 }
 
 // Option is the function used to configure the retry object.
@@ -49,7 +50,8 @@ func WithBackoff(b backoff.ExponentialBackOff) Option {
 func WithMeasures(p provider.Provider) Option {
 	return func(r *retryConfig) {
 		if p != nil {
-			r.measures = NewMeasures(p)
+			m := NewMeasures(p)
+			r.measures = &m
 		}
 	}
 }
@@ -59,10 +61,16 @@ type RetryDispatcher struct {
 	dispatcher dispatch.D
 }
 
+func (r *RetryDispatcher) Stop(ctx context.Context) {
+	panic("implement me")
+}
+
 // AddRetryMetric is a function to add to our metrics when we retry.  The
 // function is passed to the backoff package and is called when we are retrying.
 func (r *RetryDispatcher) AddRetryMetric(_ error, _ time.Duration) {
-	r.config.measures.RetryCounter.Add(1.0)
+	if r.config.measures != nil {
+		r.config.measures.RetryCounter.Add(1.0)
+	}
 }
 
 // Dispatch uses the internal dispatcher to send messages and uses the
@@ -70,13 +78,15 @@ func (r *RetryDispatcher) AddRetryMetric(_ error, _ time.Duration) {
 func (r *RetryDispatcher) Dispatch(w webhook.W, message wrp.Message) error {
 
 	dispatchFunc := func() error {
-		return r.Dispatch(w, message)
+		return r.dispatcher.Dispatch(w, message)
 	}
 
 	b := r.config.backoffConfig
 
 	err := backoff.RetryNotify(dispatchFunc, &b, r.AddRetryMetric)
-	r.config.measures.EndCounter.Add(1.0)
+	if r.config.measures != nil {
+		r.config.measures.EndCounter.Add(1.0)
+	}
 	return err
 }
 

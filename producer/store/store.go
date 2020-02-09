@@ -1,6 +1,9 @@
 package store
 
-import webhook "github.com/xmidt-org/wrp-listener"
+import (
+	"context"
+	webhook "github.com/xmidt-org/wrp-listener"
+)
 
 type Hook interface {
 	// Update applies user configurable for registering a webhook
@@ -8,7 +11,13 @@ type Hook interface {
 	Update(w webhook.W) error
 
 	// GetHooks return all the current webhooks
-	GetHooks()[]webhook.W
+	GetHooks() []webhook.W
+
+	// Stop will stop all threads and cleanup any necessary resources
+	Stop(context context.Context)
+
+	// SetListener will update the internal listener.
+	SetListener(listener Listener)
 }
 
 type Listener interface {
@@ -16,5 +25,11 @@ type Listener interface {
 	// aka. new webhook or expired.
 	//
 	// The list of hooks must contain current webhooks.
-	NewList(hooks []webhook.W) error
+	NewList(hooks []webhook.W)
+}
+
+type ListnerFunc func(hooks []webhook.W)
+
+func (listner ListnerFunc) NewList(hooks []webhook.W) {
+	listner(hooks)
 }
