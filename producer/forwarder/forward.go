@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-kit/kit/log"
 	"github.com/xmidt-org/wrp-go/wrp"
 	webhook "github.com/xmidt-org/wrp-listener"
 	"github.com/xmidt-org/wrp-listener/producer/dispatch"
@@ -24,36 +25,34 @@ type envelope struct {
 
 type Forwader struct {
 	dispatchers map[string]envelope
-	backend     store.Hook
+	backend     store.Pusher
 	forwader    ForwardMessage
 	lock        sync.RWMutex
 	build       func(w webhook.W) dispatch.D
 	stopped     int32
-	listner     store.Listener
 }
 
 type BuilderFunc func(w webhook.W) dispatch.D
 
-func CreateForwader(storage store.Hook, builder func(w webhook.W) dispatch.D, forwader ForwardMessage) *Forwader {
+func CreateForwader(buildStorage func(...store.Option) store.Pusher, builder func(w webhook.W) dispatch.D, forwader ForwardMessage, logger log.Logger) *Forwader {
 	f := &Forwader{
-		backend:     storage,
 		build:       builder,
 		forwader:    forwader,
 		stopped:     1,
 		dispatchers: map[string]envelope{},
 	}
 
-	storage.SetListener(f)
+	backend := buildStorage(store.WithLogger(logger), store.WithListener(f))
+	f.backend = backend
 
 	return f
 }
 
-func (f *Forwader) SetListener(listener store.Listener) {
-	f.listner = listener
-}
-
 func (f *Forwader) Update(w webhook.W) error {
 	return f.backend.Update(w)
+}
+func (f *Forwader) Remove(id string) error {
+	return f.backend.Remove(id)
 }
 func (f *Forwader) Forward(message wrp.Message) error {
 	return f.Dispatch(webhook.W{}, message)
@@ -86,14 +85,12 @@ func (f *Forwader) Stop(ctx context.Context) {
 	}
 }
 
-func (f *Forwader) NewList(hooks []webhook.W) {
-	fmt.Println("forwader new list", hooks)
+func (f *Forwader) List(hooks []webhook.W) {
 	f.lock.Lock()
 	for _, hook := range hooks {
 		if _, ok := f.dispatchers[hook.ID()]; !ok {
 			// if hook does not exist create dispatcher
 			dispatcher := f.build(hook)
-			fmt.Println("build new dispatcher", dispatcher)
 			if dispatcher != nil {
 				f.dispatchers[hook.ID()] = envelope{
 					hook:       hook,
@@ -117,15 +114,19 @@ func (f *Forwader) NewList(hooks []webhook.W) {
 			delete(f.dispatchers, key)
 		}
 	}
-
-	// call callback
-	if f.listner != nil {
-		f.listner.NewList(hooks)
-	}
 	f.lock.Unlock()
-	fmt.Println("done buildiung", f.dispatchers)
 }
 
-func (f *Forwader) GetHooks() []webhook.W {
-	return f.backend.GetHooks()
+func (f *Forwader) GetWebhook() ([]webhook.W, error) {
+	if reader, ok := f.backend.(store.Reader); ok {
+		return reader.GetWebhook()
+	}
+	// return current knowledge
+	f.lock.RLock()
+	data := []webhook.W{}
+	for _, value := range f.dispatchers {
+		data = append(data, value.hook)
+	}
+	f.lock.RUnlock()
+	return data, nil
 }

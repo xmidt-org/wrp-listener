@@ -25,7 +25,7 @@ func TestForwarderInterface(t *testing.T) {
 		return simpleDispatcher
 	}, ForwardMessageToAllWebhooks)
 
-	_, ok := forwader.(store.Hook)
+	_, ok := forwader.(store.Push)
 	assert.True(ok, "forwarder is not a hook storage")
 	_, ok = forwader.(dispatch.D)
 	assert.True(ok, "forwarder is not a dispatcher")
