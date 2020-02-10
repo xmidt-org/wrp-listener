@@ -101,16 +101,14 @@ func NewW(jsonString []byte, ip string) (w *W, err error) {
 	return
 }
 
-func (w *W) sanitize(ip string) (err error) {
+func (w *W) sanitize(ip string) error {
 
 	if "" == w.Config.URL {
-		err = errors.New("invalid Config URL")
-		return
+		return errors.New("invalid Config URL")
 	}
 
 	if 0 == len(w.Events) {
-		err = errors.New("invalid events")
-		return
+		return errors.New("invalid events")
 	}
 
 	// TODO Validate content type ?  What about different types?
@@ -119,15 +117,12 @@ func (w *W) sanitize(ip string) (err error) {
 		w.Matcher.DeviceID = []string{".*"} // match anything
 	}
 
-	if "" == w.Address && "" != ip {
-		// Record the IP address the request came from
-		host, _, _err := net.SplitHostPort(ip)
-		if nil != _err {
-			err = _err
-			return
-		}
-		w.Address = host
+	// Record the IP address the request came from
+	host, _, err := net.SplitHostPort(ip)
+	if nil != err {
+		return err
 	}
+	w.Address = host
 
 	// always set duration to default
 	w.Duration = time.Minute * 5
@@ -135,8 +130,7 @@ func (w *W) sanitize(ip string) (err error) {
 	if &w.Until == nil || w.Until.Equal(time.Time{}) {
 		w.Until = time.Now().Add(w.Duration)
 	}
-
-	return
+	return nil
 }
 
 // ID creates the canonical string identifing a WebhookListener

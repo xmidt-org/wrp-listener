@@ -41,10 +41,7 @@ func CreateForwader(buildStorage func(...store.Option) store.Pusher, builder fun
 		stopped:     1,
 		dispatchers: map[string]envelope{},
 	}
-
-	backend := buildStorage(store.WithLogger(logger), store.WithListener(f))
-	f.backend = backend
-
+	f.backend = buildStorage(store.WithLogger(logger), store.WithListener(f))
 	return f
 }
 
