@@ -7,8 +7,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/xmidt-org/wrp-go/wrp"
 	webhook "github.com/xmidt-org/wrp-listener"
-	"github.com/xmidt-org/wrp-listener/producer/dispatch"
-	"github.com/xmidt-org/wrp-listener/producer/store"
+	"github.com/xmidt-org/wrp-listener/dispatch"
+	"github.com/xmidt-org/wrp-listener/store"
 	"sync"
 	"sync/atomic"
 )

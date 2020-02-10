@@ -6,7 +6,7 @@ import (
 	"github.com/xmidt-org/webpa-common/semaphore"
 	"github.com/xmidt-org/wrp-go/wrp"
 	"github.com/xmidt-org/wrp-listener"
-	"github.com/xmidt-org/wrp-listener/producer/dispatch"
+	"github.com/xmidt-org/wrp-listener/dispatch"
 	"sync"
 )
 
