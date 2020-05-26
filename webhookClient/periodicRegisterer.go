@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Comcast Cable Communications Management, LLC
+ * Copyright 2020 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 	"github.com/xmidt-org/webpa-common/logging"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics/provider"
 )
 
 // A Registerer attempts to register to a webhook.  If there is a problem, an
@@ -38,6 +39,7 @@ type PeriodicRegisterer struct {
 	registerer           Registerer
 	registrationInterval time.Duration
 	logger               log.Logger
+	measures             *Measures
 	shutdown             chan struct{}
 }
 
@@ -47,14 +49,18 @@ var (
 
 // NewPeriodicRegisterer creates a registerer that attempts to register at the
 // interval given.
-func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger) *PeriodicRegisterer {
+func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, provider provider.Provider) *PeriodicRegisterer {
 	if logger == nil {
 		logger = defaultLogger
 	}
+
+	m := NewMeasures(provider)
+
 	return &PeriodicRegisterer{
 		registerer:           registerer,
 		registrationInterval: interval,
 		logger:               logger,
+		measures:             m,
 	}
 }
 
@@ -90,9 +96,19 @@ func (p *PeriodicRegisterer) registerAtInterval() {
 		case <-hookagain.C:
 			err := p.Register()
 			if err != nil {
+				reason := UnknownReason
+
+				// get a reason from the error if possible
+				errWithReason, ok := err.(ErrorWithReason)
+				if ok {
+					reason = errWithReason.Reason()
+				}
+
+				p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, FailureOutcome, ReasonLabel, reason).Add(1.0)
 				logging.Error(p.logger, emperror.Context(err)...).Log(logging.MessageKey(), "Failed to register webhook",
 					logging.ErrorKey(), err.Error())
 			} else {
+				p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, SuccessOutcome, ReasonLabel, "").Add(1.0)
 				logging.Info(p.logger).Log(logging.MessageKey(), "Successfully registered webhook")
 			}
 		}

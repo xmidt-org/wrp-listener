@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Comcast Cable Communications Management, LLC
+ * Copyright 2020 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/goph/emperror"
-	"github.com/xmidt-org/wrp-listener"
+	webhook "github.com/xmidt-org/wrp-listener"
 )
 
 const (
@@ -129,39 +129,65 @@ func NewBasicRegisterer(acquirer Acquirer, secret SecretGetter, config BasicConf
 func (b *BasicRegisterer) Register() error {
 	secret, err := b.secretGetter.GetSecret()
 	if err != nil {
-		return emperror.Wrap(err, "Failed to get secret")
+		return errWithReason{
+			err:    emperror.Wrap(err, "Failed to get secret"),
+			reason: GetSecretFail,
+		}
 	}
 
 	b.requestTemplate.Config.Secret = secret
 
 	marshaledBody, errMarshal := json.Marshal(&b.requestTemplate)
 	if errMarshal != nil {
-		return emperror.WrapWith(errMarshal, "failed to marshal")
+		return errWithReason{
+			err:    emperror.WrapWith(errMarshal, "failed to marshal"),
+			reason: MarshalRequestFail,
+		}
 	}
 
-	satToken, err := b.acquirer.Acquire()
+	jwtToken, err := b.acquirer.Acquire()
 	if err != nil {
-		return err
+		return errWithReason{
+			err:    err,
+			reason: AcquireJWTFail,
+		}
 	}
 
-	req, _ := http.NewRequest("POST", b.registrationURL, bytes.NewBuffer(marshaledBody))
-	if satToken != "" {
-		req.Header.Set("Authorization", satToken)
+	req, err := http.NewRequest("POST", b.registrationURL, bytes.NewBuffer(marshaledBody))
+	if err != nil {
+		return errWithReason{
+			err:    err,
+			reason: CreateRequestFail,
+		}
+	}
+
+	if jwtToken != "" {
+		req.Header.Set("Authorization", jwtToken)
 	}
 
 	resp, err := b.client.Do(req)
 	if err != nil {
-		return emperror.WrapWith(err, "failed to make http request")
+		return errWithReason{
+			err:    emperror.WrapWith(err, "failed to make http request"),
+			reason: DoRequestFail,
+		}
 	}
 	defer resp.Body.Close()
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return emperror.WrapWith(err, "failed to read body")
+		return errWithReason{
+			err:    emperror.WrapWith(err, "failed to read body"),
+			reason: ReadBodyFail,
+		}
 	}
 
 	if resp.StatusCode != 200 {
-		return emperror.WrapWith(fmt.Errorf("unable to register webhook"), "received non-200 response", "code", resp.StatusCode, "body", string(respBody[:]))
+		return errWithReason{
+			err: emperror.WrapWith(fmt.Errorf("unable to register webhook"), "received non-200 response",
+				"code", resp.StatusCode, "body", string(respBody[:])),
+			reason: Non200Response,
+		}
 	}
 	return nil
 }
