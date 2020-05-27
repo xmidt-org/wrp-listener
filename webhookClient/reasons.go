@@ -17,7 +17,8 @@
 
 package webhookClient
 
-// ReasonCode is easier to consume programmatically if it's an enumerated integral type
+// ReasonCode is a way to describe what went wrong when trying to register for
+// a webhook.
 type ReasonCode int
 
 const (
@@ -31,11 +32,8 @@ const (
 	Non200Response
 )
 
-// the catch-all value, intern'ed as a variable
 var unknownReasonLabelValue = "unknown"
 
-// using a global map essentially interns the string values
-// it also makes it easy to inspect the code when adding/removing reasons
 var reasonLabelValues = map[ReasonCode]string{
 	GetSecretFail:      "get_secret_failed",
 	MarshalRequestFail: "marshal_request_failed",
@@ -47,7 +45,7 @@ var reasonLabelValues = map[ReasonCode]string{
 }
 
 // LabelValue returns the metric label value for this reason code,
-// or unknown if it's some wacky value
+// or unknown if it's some wacky value.
 func (rc ReasonCode) LabelValue() string {
 	if lv, ok := reasonLabelValues[rc]; ok {
 		return lv
@@ -56,13 +54,13 @@ func (rc ReasonCode) LabelValue() string {
 	return unknownReasonLabelValue
 }
 
-// Anything, not just errors, can implement this interface.  Similar to the pattern in packages
-// like go-kit, e.g. StatusCoder
+// ReasonCoder is anything that can return a ReasonCode.
 type ReasonCoder interface {
 	ReasonCode() ReasonCode
 }
 
-// You can then provide a helper function that accepts any old object, including errors:
+// GetReasonCode returns the ReasonCode if the object is a ReasonCoder.
+// Otherwise, it returns UnknownReason.
 func GetReasonCode(v interface{}) ReasonCode {
 	if rc, ok := v.(ReasonCoder); ok {
 		return rc.ReasonCode()
