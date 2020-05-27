@@ -38,16 +38,6 @@ const (
 	// outcomes
 	SuccessOutcome = "success"
 	FailureOutcome = "failure"
-
-	// reasons
-	UnknownReason      = "unknown"
-	GetSecretFail      = "get_secret_failed"
-	MarshalRequestFail = "marshal_request_failed"
-	AcquireJWTFail     = "acquire_jwt_failed"
-	CreateRequestFail  = "create_request_failed"
-	DoRequestFail      = "do_request_failed"
-	ReadBodyFail       = "read_body_failed"
-	Non200Response     = "non_200_response"
 )
 
 //Metrics returns the Metrics relevant to this package

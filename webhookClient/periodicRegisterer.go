@@ -96,15 +96,7 @@ func (p *PeriodicRegisterer) registerAtInterval() {
 		case <-hookagain.C:
 			err := p.Register()
 			if err != nil {
-				reason := UnknownReason
-
-				// get a reason from the error if possible
-				errWithReason, ok := err.(ErrorWithReason)
-				if ok {
-					reason = errWithReason.Reason()
-				}
-
-				p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, FailureOutcome, ReasonLabel, reason).Add(1.0)
+				p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, FailureOutcome, ReasonLabel, GetReasonCode(err).LabelValue()).Add(1.0)
 				logging.Error(p.logger, emperror.Context(err)...).Log(logging.MessageKey(), "Failed to register webhook",
 					logging.ErrorKey(), err.Error())
 			} else {

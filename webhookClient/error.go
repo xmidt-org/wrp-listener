@@ -17,19 +17,15 @@
 
 package webhookClient
 
-type ErrorWithReason interface {
-	Reason() string
-}
-
 type errWithReason struct {
 	err    error
-	reason string
+	reason ReasonCode
 }
 
 func (e errWithReason) Error() string {
 	return e.err.Error()
 }
 
-func (e errWithReason) Reason() string {
+func (e errWithReason) ReasonCode() ReasonCode {
 	return e.reason
 }
