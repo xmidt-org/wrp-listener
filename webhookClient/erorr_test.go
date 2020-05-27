@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Comcast Cable Communications Management, LLC
+ * Copyright 2019 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,22 @@
 
 package webhookClient
 
-// implements error and ReasonCoder
-type errWithReason struct {
-	err    error
-	reason ReasonCode
-}
+import (
+	"errors"
+	"testing"
 
-func (e errWithReason) Error() string {
-	return e.err.Error()
-}
+	"github.com/stretchr/testify/assert"
+)
 
-func (e errWithReason) ReasonCode() ReasonCode {
-	return e.reason
+func TestErrWithReason(t *testing.T) {
+	var testObj interface{}
+	testObj = errWithReason{
+		err:    errors.New("test error with reason"),
+		reason: CreateRequestFail,
+	}
+	_, ok := testObj.(ReasonCoder)
+	assert.True(t, ok)
+
+	_, ok = testObj.(error)
+	assert.True(t, ok)
 }

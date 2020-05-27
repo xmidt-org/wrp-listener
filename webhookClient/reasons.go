@@ -62,6 +62,10 @@ type ReasonCoder interface {
 // GetReasonCode returns the ReasonCode if the object is a ReasonCoder.
 // Otherwise, it returns UnknownReason.
 func GetReasonCode(v interface{}) ReasonCode {
+	if v == nil {
+		return UnknownReason
+	}
+
 	if rc, ok := v.(ReasonCoder); ok {
 		return rc.ReasonCode()
 	}
