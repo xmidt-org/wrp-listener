@@ -26,7 +26,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/goph/emperror"
 	webhook "github.com/xmidt-org/wrp-listener"
 )
 
@@ -130,7 +129,7 @@ func (b *BasicRegisterer) Register() error {
 	secret, err := b.secretGetter.GetSecret()
 	if err != nil {
 		return errWithReason{
-			err:    emperror.Wrap(err, "Failed to get secret"),
+			err:    fmt.Errorf("failed to get secret: %v", err),
 			reason: GetSecretFail,
 		}
 	}
@@ -140,7 +139,7 @@ func (b *BasicRegisterer) Register() error {
 	marshaledBody, errMarshal := json.Marshal(&b.requestTemplate)
 	if errMarshal != nil {
 		return errWithReason{
-			err:    emperror.WrapWith(errMarshal, "failed to marshal"),
+			err:    fmt.Errorf("failed to marshal request: %v", errMarshal),
 			reason: MarshalRequestFail,
 		}
 	}
@@ -168,7 +167,7 @@ func (b *BasicRegisterer) Register() error {
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return errWithReason{
-			err:    emperror.WrapWith(err, "failed to make http request"),
+			err:    fmt.Errorf("failed to make http request: %v", err),
 			reason: DoRequestFail,
 		}
 	}
@@ -177,15 +176,15 @@ func (b *BasicRegisterer) Register() error {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return errWithReason{
-			err:    emperror.WrapWith(err, "failed to read body"),
+			err:    fmt.Errorf("failed to read body: %v", err),
 			reason: ReadBodyFail,
 		}
 	}
 
 	if resp.StatusCode != 200 {
 		return errWithReason{
-			err: emperror.WrapWith(fmt.Errorf("unable to register webhook"), "received non-200 response",
-				"code", resp.StatusCode, "body", string(respBody[:])),
+			err: fmt.Errorf("received non-200 response: %v, body: %v",
+				resp.StatusCode, string(respBody[:])),
 			reason: Non200Response,
 		}
 	}

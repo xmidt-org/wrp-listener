@@ -20,10 +20,10 @@ package webhookClient
 import (
 	"time"
 
-	"github.com/goph/emperror"
 	"github.com/xmidt-org/webpa-common/logging"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/go-kit/kit/metrics/provider"
 )
 
@@ -82,27 +82,25 @@ func (p *PeriodicRegisterer) Stop() {
 
 func (p *PeriodicRegisterer) registerAtInterval() {
 	hookagain := time.NewTicker(p.registrationInterval)
-	err := p.Register()
-	if err != nil {
-		logging.Error(p.logger, emperror.Context(err)...).Log(logging.MessageKey(), "Failed to register webhook",
-			logging.ErrorKey(), err.Error())
-	} else {
-		logging.Info(p.logger).Log(logging.MessageKey(), "Successfully registered webhook")
-	}
+	p.registerAndLog()
 	for {
 		select {
 		case <-p.shutdown:
 			return
 		case <-hookagain.C:
-			err := p.Register()
-			if err != nil {
-				p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, FailureOutcome, ReasonLabel, GetReasonCode(err).LabelValue()).Add(1.0)
-				logging.Error(p.logger, emperror.Context(err)...).Log(logging.MessageKey(), "Failed to register webhook",
-					logging.ErrorKey(), err.Error())
-			} else {
-				p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, SuccessOutcome, ReasonLabel, "").Add(1.0)
-				logging.Info(p.logger).Log(logging.MessageKey(), "Successfully registered webhook")
-			}
+			p.registerAndLog()
 		}
+	}
+}
+
+func (p *PeriodicRegisterer) registerAndLog() {
+	err := p.Register()
+	if err != nil {
+		p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, FailureOutcome, ReasonLabel, GetReasonCode(err).LabelValue()).Add(1.0)
+		p.logger.Log(level.Key(), level.ErrorValue(), logging.MessageKey(), "Failed to register webhook",
+			logging.ErrorKey(), err.Error())
+	} else {
+		p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, SuccessOutcome, ReasonLabel, "").Add(1.0)
+		p.logger.Log(level.Key(), level.InfoValue(), logging.MessageKey(), "Successfully registered webhook")
 	}
 }
