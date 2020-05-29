@@ -27,7 +27,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/xmidt-org/wrp-listener"
+	webhook "github.com/xmidt-org/wrp-listener"
 )
 
 func TestNewBasicRegisterer(t *testing.T) {
@@ -193,6 +193,7 @@ func TestBasicRegister(t *testing.T) {
 		requestResponse    *http.Response
 		requestResponseErr error
 		expectedErr        error
+		expectedReason     ReasonCode
 	}{
 		{
 			description:     "Success",
@@ -202,15 +203,17 @@ func TestBasicRegister(t *testing.T) {
 			expectedErr:     nil,
 		},
 		{
-			description:  "Get Secret Error",
-			getSecretErr: getSecretErr,
-			expectedErr:  getSecretErr,
+			description:    "Get Secret Error",
+			getSecretErr:   getSecretErr,
+			expectedErr:    getSecretErr,
+			expectedReason: GetSecretFail,
 		},
 		{
-			description:   "Acquire Error",
-			acquireCalled: true,
-			acquireErr:    acquireErr,
-			expectedErr:   acquireErr,
+			description:    "Acquire Error",
+			acquireCalled:  true,
+			acquireErr:     acquireErr,
+			expectedErr:    acquireErr,
+			expectedReason: AcquireJWTFail,
 		},
 		{
 			description:        "Do Error",
@@ -219,6 +222,7 @@ func TestBasicRegister(t *testing.T) {
 			requestResponse:    goodResponse,
 			requestResponseErr: requestErr,
 			expectedErr:        requestErr,
+			expectedReason:     DoRequestFail,
 		},
 		{
 			description:     "Bad Response Error",
@@ -226,6 +230,7 @@ func TestBasicRegister(t *testing.T) {
 			request:         true,
 			requestResponse: badResponse,
 			expectedErr:     errors.New("received non-200 response"),
+			expectedReason:  Non200Response,
 		},
 	}
 
@@ -259,6 +264,9 @@ func TestBasicRegister(t *testing.T) {
 				assert.Equal(tc.expectedErr, err)
 			} else {
 				assert.Contains(err.Error(), tc.expectedErr.Error())
+			}
+			if tc.expectedErr != nil {
+				assert.Equal(tc.expectedReason, GetReasonCode(err))
 			}
 		})
 	}
