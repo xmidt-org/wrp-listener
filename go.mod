@@ -9,5 +9,6 @@ require (
 	github.com/influxdata/influxdb v1.8.0 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/xmidt-org/bascule v0.8.0
-	github.com/xmidt-org/webpa-common v1.3.0
+	github.com/xmidt-org/webpa-common v1.3.2
+	github.com/xmidt-org/wrp-go/v2 v2.0.1
 )
