@@ -6,6 +6,11 @@ import (
 	"github.com/xmidt-org/wrp-go/v2"
 )
 
+var (
+	errNilFinder     = errors.New("invalid default finder: cannot be nil")
+	errNilClassifier = errors.New("invalid classifier: cannot be nil")
+)
+
 type DeviceFinder interface {
 	FindDeviceID(msg *wrp.Message) (string, error)
 }
@@ -49,11 +54,11 @@ func WithDeviceFinder(label string, finder DeviceFinder) ParserOption {
 
 func NewStrParser(classifier Classifier, defaultFinder DeviceFinder, options ...ParserOption) (*StrParser, error) {
 	if defaultFinder == nil {
-		return nil, errors.New("some error")
+		return nil, errNilFinder
 	}
 
 	if classifier == nil {
-		return nil, errors.New("some error")
+		return nil, errNilClassifier
 	}
 
 	p := &StrParser{

@@ -2,14 +2,14 @@ package wrpparser
 
 import "github.com/xmidt-org/wrp-go/v2"
 
-type field int
+type Field int
 
 const (
-	Source field = iota
+	Source Field = iota
 	Destination
 )
 
-func getFieldValue(f field, msg *wrp.Message) string {
+func getFieldValue(f Field, msg *wrp.Message) string {
 	switch f {
 	case Destination:
 		return msg.Destination

@@ -7,6 +7,11 @@ import (
 	"github.com/xmidt-org/wrp-go/v2"
 )
 
+var (
+	errNilRegex         = errors.New("invalid regex, cannot be nil")
+	errEmptyClassifiers = errors.New("not enough valid classifiers, must have at least 1")
+)
+
 type ConstClassifier struct {
 	label string
 	ok    bool
@@ -23,7 +28,7 @@ func NewConstClassifier(label string, ok bool) *ConstClassifier {
 type RegexpLabel struct {
 	label string
 	regex *regexp.Regexp
-	field field
+	field Field
 }
 
 func (r *RegexpLabel) Label(msg *wrp.Message) (string, bool) {
@@ -34,9 +39,9 @@ func (r *RegexpLabel) Label(msg *wrp.Message) (string, bool) {
 	return r.label, true
 }
 
-func NewRegexpLabel(label string, regex *regexp.Regexp, field field) (*RegexpLabel, error) {
+func NewRegexpLabel(label string, regex *regexp.Regexp, field Field) (*RegexpLabel, error) {
 	if regex == nil {
-		return nil, errors.New("some error")
+		return nil, errNilRegex
 	}
 	return &RegexpLabel{
 		label: label,
@@ -45,7 +50,7 @@ func NewRegexpLabel(label string, regex *regexp.Regexp, field field) (*RegexpLab
 	}, nil
 }
 
-func NewRegexpLabelFromStr(label, regexStr string, field field) (*RegexpLabel, error) {
+func NewRegexpLabelFromStr(label, regexStr string, field Field) (*RegexpLabel, error) {
 	regex, err := regexp.Compile(regexStr)
 	if err != nil {
 		return nil, err
@@ -78,7 +83,7 @@ func NewMultClassifier(classifiers ...Classifier) (*MultClassifier, error) {
 		m.classifiers = append(m.classifiers, c)
 	}
 	if len(m.classifiers) == 0 {
-		return nil, errors.New("some error")
+		return nil, errEmptyClassifiers
 	}
 	return &m, nil
 }
