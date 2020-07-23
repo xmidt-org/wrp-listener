@@ -1,6 +1,6 @@
 package wrpparser
 
-import "github.com/xmidt-org/wrp-go/v2"
+import "github.com/xmidt-org/wrp-go/v3"
 
 // Field is an enum that describes a specific field in a wrp message.
 // Further docs on wrps can be found here:
