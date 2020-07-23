@@ -1,0 +1,23 @@
+package wrpparser
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/xmidt-org/wrp-go/v2"
+)
+
+func TestGetFieldValue(t *testing.T) {
+	expectedDest := "dest"
+	expectedSource := "src"
+	testWRP := &wrp.Message{
+		Destination: expectedDest,
+		Source:      expectedSource,
+	}
+	dest := getFieldValue(Destination, testWRP)
+	src := getFieldValue(Source, testWRP)
+
+	assert := assert.New(t)
+	assert.Equal(expectedDest, dest)
+	assert.Equal(expectedSource, src)
+}

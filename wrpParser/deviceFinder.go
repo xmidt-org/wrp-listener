@@ -2,6 +2,7 @@ package wrpparser
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -81,7 +82,7 @@ func NewRegexpFinder(field Field, regex *regexp.Regexp, deviceLabel string) (*Re
 func NewRegexpFinderFromStr(field Field, regexStr string, deviceLabel string) (*RegexpFinder, error) {
 	regex, err := regexp.Compile(regexStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to compile [%v] into a regular expression: %w", regexStr, err)
 	}
 	return NewRegexpFinder(field, regex, deviceLabel)
 }

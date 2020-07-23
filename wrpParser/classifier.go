@@ -2,6 +2,7 @@ package wrpparser
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/xmidt-org/wrp-go/v2"
@@ -28,7 +29,8 @@ type ConstClassifier struct {
 }
 
 // Label returns the saved label and boolean value without any checks to the
-// message it receives.
+// message it receives.  Even if the message is nil, the same result is
+// provided.
 func (c ConstClassifier) Label(_ *wrp.Message) (string, bool) {
 	return c.label, c.ok
 }
@@ -41,7 +43,7 @@ func NewConstClassifier(label string, ok bool) *ConstClassifier {
 
 // RegexpLabel labels wrp messages if a regular expression matches a specified
 // field.
-type RegexpLabel struct {
+type RegexpClassifier struct {
 	label string
 	regex *regexp.Regexp
 	field Field
@@ -51,7 +53,12 @@ type RegexpLabel struct {
 // matches against it, returns the stored label.  Otherwise, it returns an
 // empty string.  If a label is returned, the boolean is true.  Otherwise,
 // false.
-func (r *RegexpLabel) Label(msg *wrp.Message) (string, bool) {
+func (r *RegexpClassifier) Label(msg *wrp.Message) (string, bool) {
+	// if the wrp message is nil, don't do anything
+	if msg == nil {
+		return "", false
+	}
+
 	loc := r.regex.FindStringIndex(getFieldValue(r.field, msg))
 	if loc == nil {
 		return "", false
@@ -59,27 +66,27 @@ func (r *RegexpLabel) Label(msg *wrp.Message) (string, bool) {
 	return r.label, true
 }
 
-// NewRegexpLabel creates a new RegexpLabel struct as long as the regular
+// NewRegexpClassifier creates a new RegexpClassifier struct as long as the regular
 // expression provided is valid.
-func NewRegexpLabel(label string, regex *regexp.Regexp, field Field) (*RegexpLabel, error) {
+func NewRegexpClassifier(label string, regex *regexp.Regexp, field Field) (*RegexpClassifier, error) {
 	if regex == nil {
 		return nil, errNilRegex
 	}
-	return &RegexpLabel{
+	return &RegexpClassifier{
 		label: label,
 		regex: regex,
 		field: field,
 	}, nil
 }
 
-// NewRegexpLabelFromStr takes a string representation of a regular expression
-// and compiles it, then creates a RegexpLabel struct.
-func NewRegexpLabelFromStr(label, regexStr string, field Field) (*RegexpLabel, error) {
+// NewRegexpClassifierFromStr takes a string representation of a regular expression
+// and compiles it, then creates a RegexpClassifier struct.
+func NewRegexpClassifierFromStr(label, regexStr string, field Field) (*RegexpClassifier, error) {
 	regex, err := regexp.Compile(regexStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to compile [%v] into a regular expression: %w", regexStr, err)
 	}
-	return NewRegexpLabel(label, regex, field)
+	return NewRegexpClassifier(label, regex, field)
 }
 
 // MultClassifier runs multiple classifiers on each message it receives,
