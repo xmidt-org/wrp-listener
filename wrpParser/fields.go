@@ -17,7 +17,11 @@
 
 package wrpparser
 
-import "github.com/xmidt-org/wrp-go/v3"
+import (
+	"strings"
+
+	"github.com/xmidt-org/wrp-go/v3"
+)
 
 // Field is an enum that describes a specific field in a wrp message.
 // Further docs on wrps can be found here:
@@ -30,6 +34,22 @@ const (
 	// Destination is a wrp message's Destination field.
 	Destination
 )
+
+// GetField translates a string into a Field enum.  The default is Source.
+func GetField(f string) Field {
+	if strings.ToLower(f) == "destination" {
+		return Destination
+	}
+	return Source
+}
+
+// String translates the Field enum into a string.
+func (f Field) String() string {
+	if f == Destination {
+		return "destination"
+	}
+	return "source"
+}
 
 // getFieldValue takes a field and a message, returning the value at the field
 // in the message.
