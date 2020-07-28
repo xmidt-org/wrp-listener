@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.2.1]
+- Downgraded uuid version [#19](https://github.com/xmidt-org/wrp-listener/pull/19)
+
 ## [v0.2.0]
 - Added metrics for periodicRegisterer [#18](https://github.com/xmidt-org/wrp-listener/pull/18)
 - Added parser for extracting device ID from wrp message [#23](https://github.com/xmidt-org/wrp-listener/pull/23)
