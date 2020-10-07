@@ -81,6 +81,7 @@ func TestNewPeriodicRegisterer(t *testing.T) {
 			assert := assert.New(t)
 			pr, err := NewPeriodicRegisterer(tc.registerer, tc.interval, tc.logger, registry)
 			if pr != nil {
+				//make sure shutdown channel is created
 				assert.NotNil(pr.shutdown)
 				tc.expectedRegisterer.shutdown = pr.shutdown
 			}
