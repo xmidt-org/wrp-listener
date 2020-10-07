@@ -18,6 +18,7 @@
 package webhookClient
 
 import (
+	"errors"
 	"time"
 
 	"github.com/xmidt-org/webpa-common/logging"
@@ -49,7 +50,11 @@ var (
 
 // NewPeriodicRegisterer creates a registerer that attempts to register at the
 // interval given.
-func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, provider provider.Provider) *PeriodicRegisterer {
+func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, provider provider.Provider) (*PeriodicRegisterer, error) {
+	if interval == 0 {
+		return nil, errors.New("interval cannot be 0")
+	}
+
 	if logger == nil {
 		logger = defaultLogger
 	}
@@ -61,7 +66,8 @@ func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger
 		registrationInterval: interval,
 		logger:               logger,
 		measures:             m,
-	}
+		shutdown:             make(chan struct{}),
+	}, nil
 }
 
 // Register is just a wrapper to provide the regular Register functionality,
