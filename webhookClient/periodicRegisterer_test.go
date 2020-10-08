@@ -68,6 +68,18 @@ func TestNewPeriodicRegisterer(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			description: "Success with Default Logger",
+			registerer:  &basicRegisterer,
+			interval:    validInterval,
+			expectedRegisterer: &PeriodicRegisterer{
+				registerer:           &basicRegisterer,
+				registrationInterval: validInterval,
+				logger:               defaultLogger,
+				measures:             m,
+			},
+			expectedErr: nil,
+		},
+		{
 			description:        "0 interval",
 			registerer:         &basicRegisterer,
 			interval:           0,
