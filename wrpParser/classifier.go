@@ -31,9 +31,9 @@ var (
 )
 
 // Classifier is an object that Labels a wrp message.  The Classifier provides
-// the label associated with the wrp upon labelling it, as well as a boolean
-// that describes whether or not the Classifier could label the message.  The
-// message is not modified in any way.
+// the label associated with the wrp upon labeling it, as well as a boolean that
+// describes whether or not the Classifier could label the message.  The message
+// is not modified in any way.
 type Classifier interface {
 	Label(*wrp.Message) (string, bool)
 }
@@ -52,7 +52,7 @@ func (c ConstClassifier) Label(_ *wrp.Message) (string, bool) {
 	return c.label, c.ok
 }
 
-// NewConstClassifier creates the classifier that consistenly labels every wrp
+// NewConstClassifier creates the classifier that consistently labels every wrp
 // message the same way.
 func NewConstClassifier(label string, ok bool) *ConstClassifier {
 	return &ConstClassifier{label: label, ok: ok}
