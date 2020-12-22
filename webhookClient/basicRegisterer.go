@@ -133,9 +133,7 @@ func (b *BasicRegisterer) Register() error {
 			reason: GetSecretFail,
 		}
 	}
-
 	b.requestTemplate.Config.Secret = secret
-
 	marshaledBody, errMarshal := json.Marshal(&b.requestTemplate)
 	if errMarshal != nil {
 		return errWithReason{
@@ -163,7 +161,6 @@ func (b *BasicRegisterer) Register() error {
 	if jwtToken != "" {
 		req.Header.Set("Authorization", jwtToken)
 	}
-
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return errWithReason{
