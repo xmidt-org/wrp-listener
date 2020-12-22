@@ -180,9 +180,8 @@ func TestBasicRegister(t *testing.T) {
 		Header:     make(http.Header),
 	}
 
-	getSecretErr := errors.New("test get secret error")
+	testErr := errors.New("test error")
 	acquireErr := errors.New("test acquire error")
-	requestErr := errors.New("test request response error")
 
 	tests := []struct {
 		description        string
@@ -204,8 +203,8 @@ func TestBasicRegister(t *testing.T) {
 		},
 		{
 			description:    "Get Secret Error",
-			getSecretErr:   getSecretErr,
-			expectedErr:    getSecretErr,
+			getSecretErr:   testErr,
+			expectedErr:    ErrGetSecretFail,
 			expectedReason: GetSecretFail,
 		},
 		{
@@ -220,8 +219,8 @@ func TestBasicRegister(t *testing.T) {
 			acquireCalled:      true,
 			request:            true,
 			requestResponse:    goodResponse,
-			requestResponseErr: requestErr,
-			expectedErr:        requestErr,
+			requestResponseErr: testErr,
+			expectedErr:        ErrDoFail,
 			expectedReason:     DoRequestFail,
 		},
 		{
@@ -229,7 +228,7 @@ func TestBasicRegister(t *testing.T) {
 			acquireCalled:   true,
 			request:         true,
 			requestResponse: badResponse,
-			expectedErr:     errors.New("received non-200 response"),
+			expectedErr:     ErrNon200Resp,
 			expectedReason:  Non200Response,
 		},
 	}
