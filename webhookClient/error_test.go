@@ -25,8 +25,7 @@ import (
 )
 
 func TestErrWithReason(t *testing.T) {
-	var testObj interface{}
-	testObj = errWithReason{
+	var testObj interface{} = errWithReason{
 		err:    errors.New("test error with reason"),
 		reason: CreateRequestFail,
 	}

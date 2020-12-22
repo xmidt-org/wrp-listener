@@ -61,7 +61,7 @@ type RegexpFinder struct {
 func (r *RegexpFinder) FindDeviceID(msg *wrp.Message) (string, error) {
 	fieldValue := getFieldValue(r.field, msg)
 	matches := r.regex.FindStringSubmatch(fieldValue)
-	if matches == nil || len(matches) == 0 || len(matches) <= r.subExpressionIdx {
+	if len(matches) == 0 || len(matches) <= r.subExpressionIdx {
 		return "", errNoMatch
 	}
 	deviceID := matches[r.subExpressionIdx]
