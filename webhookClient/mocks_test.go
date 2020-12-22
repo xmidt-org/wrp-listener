@@ -41,15 +41,6 @@ func (rt *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 	return args.Get(0).(*http.Response), args.Error(1)
 }
 
-type mockRegisterer struct {
-	mock.Mock
-}
-
-func (r *mockRegisterer) Register(client *http.Client, secret string) error {
-	args := r.Called(client, secret)
-	return args.Error(0)
-}
-
 type mockSecretGetter struct {
 	mock.Mock
 }
