@@ -49,7 +49,7 @@ func (p *StrParser) Parse(msg *wrp.Message) (string, error) {
 	f := p.defaultFinder
 	label, ok := p.classifier.Label(msg)
 
-	// if we labelled the message, get the associated DeviceFinder.
+	// if we labeled the message, get the associated DeviceFinder.
 	if ok {
 		if f, ok = p.finders[label]; !ok {
 			// if we don't have a DeviceFinder for the label, use the default.
@@ -76,7 +76,7 @@ func WithDeviceFinder(label string, finder DeviceFinder) ParserOption {
 }
 
 // NewStrParser sets up the StrParser with a valid classifier and defaultFinder.
-// Options need to be provided in order to add more DeviceFinders for diferent
+// Options need to be provided in order to add more DeviceFinders for different
 // labels.
 func NewStrParser(classifier Classifier, defaultFinder DeviceFinder, options ...ParserOption) (*StrParser, error) {
 	if defaultFinder == nil {

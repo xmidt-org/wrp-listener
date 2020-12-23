@@ -35,6 +35,14 @@ const (
 	DefaultTimeout      = 10 * time.Second
 )
 
+var (
+	ErrGetSecretFail = errors.New("failed to get secret")
+	ErrMarshalFail   = errors.New("failed to marshal request")
+	ErrDoFail        = errors.New("failed to make http request")
+	ErrReadFail      = errors.New("failed to read body")
+	ErrNon200Resp    = errors.New("received non-200 response")
+)
+
 // Acquirer gets an Authorization value that can be added to an http request.
 // The format of the string returned should be the key, a space, and then the
 // auth string.
@@ -129,17 +137,15 @@ func (b *BasicRegisterer) Register() error {
 	secret, err := b.secretGetter.GetSecret()
 	if err != nil {
 		return errWithReason{
-			err:    fmt.Errorf("failed to get secret: %v", err),
+			err:    fmt.Errorf("%w: %v", ErrGetSecretFail, err),
 			reason: GetSecretFail,
 		}
 	}
-
 	b.requestTemplate.Config.Secret = secret
-
 	marshaledBody, errMarshal := json.Marshal(&b.requestTemplate)
 	if errMarshal != nil {
 		return errWithReason{
-			err:    fmt.Errorf("failed to marshal request: %v", errMarshal),
+			err:    fmt.Errorf("%w: %v", ErrMarshalFail, errMarshal),
 			reason: MarshalRequestFail,
 		}
 	}
@@ -163,11 +169,10 @@ func (b *BasicRegisterer) Register() error {
 	if jwtToken != "" {
 		req.Header.Set("Authorization", jwtToken)
 	}
-
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return errWithReason{
-			err:    fmt.Errorf("failed to make http request: %v", err),
+			err:    fmt.Errorf("%w: %v", ErrDoFail, err),
 			reason: DoRequestFail,
 		}
 	}
@@ -176,14 +181,14 @@ func (b *BasicRegisterer) Register() error {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return errWithReason{
-			err:    fmt.Errorf("failed to read body: %v", err),
+			err:    fmt.Errorf("%w: %v", ErrReadFail, err),
 			reason: ReadBodyFail,
 		}
 	}
 
 	if resp.StatusCode != 200 {
 		return errWithReason{
-			err: fmt.Errorf("received non-200 response: %v, body: %v",
+			err: fmt.Errorf("%w: %v, body: %v", ErrNon200Resp,
 				resp.StatusCode, string(respBody[:])),
 			reason: Non200Response,
 		}

@@ -45,8 +45,7 @@ func TestConstClassifier(t *testing.T) {
 
 func TestConstClassifierInterface(t *testing.T) {
 	// test that the ConstClassifier implements the Classifier interface.
-	var classifier interface{}
-	classifier = NewConstClassifier("", false)
+	var classifier interface{} = NewConstClassifier("", false)
 	_, ok := classifier.(Classifier)
 	assert.True(t, ok)
 }
