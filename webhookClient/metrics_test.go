@@ -22,6 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/xmidt-org/webpa-common/xmetrics"
+	"github.com/xmidt-org/webpa-common/xmetrics/xmetricstest"
 )
 
 func newTestMeasure() *Measures {
@@ -31,4 +32,11 @@ func newTestMeasure() *Measures {
 func TestSimpleRun(t *testing.T) {
 	assert := assert.New(t)
 	assert.NotNil(newTestMeasure())
+}
+
+func TestNewProvideMeasures(t *testing.T) {
+	assert := assert.New(t)
+	registry := xmetricstest.NewProvider(&xmetrics.Options{})
+	measuresIn := MeasuresIn{WebhookRegistrationOutcome: registry.NewCounter("webhooks")}
+	assert.NotNil(NewProvideMeasures(measuresIn))
 }
