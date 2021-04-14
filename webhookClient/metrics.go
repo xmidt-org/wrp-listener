@@ -20,7 +20,10 @@ package webhookClient
 import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/touchstone/touchkit"
 	"github.com/xmidt-org/webpa-common/xmetrics"
+	"go.uber.org/fx"
 )
 
 //Names for our metrics
@@ -57,9 +60,32 @@ type Measures struct {
 	WebhookRegistrationOutcome metrics.Counter
 }
 
+// MeasuresIn is an uber/fx paramter with the webhook registration counter
+type MeasuresIn struct {
+	fx.In
+	WebhookRegistrationOutcome metrics.Counter `name:"webhook_registration"`
+}
+
 //NewMeasures realizes desired metrics.
 func NewMeasures(p provider.Provider) *Measures {
 	return &Measures{
 		WebhookRegistrationOutcome: p.NewCounter(WebhookRegistrationOutcome),
 	}
+}
+
+// NewProvideMeasures converts MeasuresIn to Measures
+func NewProvideMeasures(in MeasuresIn) *Measures {
+	return &Measures{
+		WebhookRegistrationOutcome: in.WebhookRegistrationOutcome,
+	}
+}
+
+// ProvideMetrics provides the metrics relevant to this package as uber/fx options.
+func ProvideMetrics() fx.Option {
+	return touchkit.Counter(
+		prometheus.CounterOpts{
+			Name: WebhookRegistrationOutcome,
+			Help: "Counter for the periodic registerer, providing the outcome of a registration attempt",
+		}, OutcomeLabel, ReasonLabel,
+	)
 }
