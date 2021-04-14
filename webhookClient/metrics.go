@@ -60,7 +60,7 @@ type Measures struct {
 	WebhookRegistrationOutcome metrics.Counter
 }
 
-// MeasuresIn is an uber/fx paramter with the webhook registration counter
+// MeasuresIn is an uber/fx parameter with the webhook registration counter
 type MeasuresIn struct {
 	fx.In
 	WebhookRegistrationOutcome metrics.Counter `name:"webhook_registration"`
