@@ -66,7 +66,7 @@ type MeasuresIn struct {
 	WebhookRegistrationOutcome metrics.Counter `name:"webhook_registration"`
 }
 
-//NewMeasures realizes desired metrics.
+// NewMeasures realizes desired metrics.
 func NewMeasures(p provider.Provider) *Measures {
 	return &Measures{
 		WebhookRegistrationOutcome: p.NewCounter(WebhookRegistrationOutcome),
