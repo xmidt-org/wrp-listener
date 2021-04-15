@@ -21,7 +21,6 @@ func Provide() fx.Option {
 	return fx.Options(
 		ProvideMetrics(),
 		fx.Provide(
-			NewProvideMeasures,
 			NewBasicRegisterer,
 			func(info PeriodicRegistererIn) (*PeriodicRegisterer, error) {
 				return NewPeriodicRegisterer(info.Registerer, info.Interval, info.Logger, info.Measures)

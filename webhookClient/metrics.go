@@ -73,19 +73,21 @@ func NewMeasures(p provider.Provider) *Measures {
 	}
 }
 
-// NewProvideMeasures converts MeasuresIn to Measures
-func NewProvideMeasures(in MeasuresIn) *Measures {
-	return &Measures{
-		WebhookRegistrationOutcome: in.WebhookRegistrationOutcome,
-	}
-}
-
 // ProvideMetrics provides the metrics relevant to this package as uber/fx options.
 func ProvideMetrics() fx.Option {
-	return touchkit.Counter(
-		prometheus.CounterOpts{
-			Name: WebhookRegistrationOutcome,
-			Help: "Counter for the periodic registerer, providing the outcome of a registration attempt",
-		}, OutcomeLabel, ReasonLabel,
+	return fx.Options(
+		touchkit.Counter(
+			prometheus.CounterOpts{
+				Name: WebhookRegistrationOutcome,
+				Help: "Counter for the periodic registerer, providing the outcome of a registration attempt",
+			}, OutcomeLabel, ReasonLabel,
+		),
+		fx.Provide(
+			func(in MeasuresIn) *Measures {
+				return &Measures{
+					WebhookRegistrationOutcome: in.WebhookRegistrationOutcome,
+				}
+			},
+		),
 	)
 }
