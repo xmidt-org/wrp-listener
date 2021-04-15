@@ -13,7 +13,7 @@ type PeriodicRegistererIn struct {
 	Registerer *BasicRegisterer
 	Interval   time.Duration `name:"periodic_registration_interval"`
 	Logger     log.Logger
-	Measures   MeasuresIn
+	Measures   *Measures
 }
 
 // Provide bundles all of the constructors needed to create a new periodic registerer.
@@ -21,10 +21,10 @@ func Provide() fx.Option {
 	return fx.Options(
 		ProvideMetrics(),
 		fx.Provide(
-			// NewProvideMeasures,
+			NewProvideMeasures,
 			NewBasicRegisterer,
 			func(info PeriodicRegistererIn) (*PeriodicRegisterer, error) {
-				return NewPeriodicRegisterer(info.Registerer, info.Interval, info.Logger, info.Measures.Measures)
+				return NewPeriodicRegisterer(info.Registerer, info.Interval, info.Logger, info.Measures)
 			},
 		),
 	)
