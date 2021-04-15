@@ -57,13 +57,13 @@ func Metrics() []xmetrics.Metric {
 
 //Measures describes the defined metrics that will be used by clients.
 type Measures struct {
-	WebhookRegistrationOutcome metrics.Counter
+	WebhookRegistrationOutcome metrics.Counter `name:"webhook_registration"`
 }
 
 // MeasuresIn is an uber/fx parameter with the webhook registration counter
 type MeasuresIn struct {
 	fx.In
-	WebhookRegistrationOutcome metrics.Counter `name:"webhook_registration"`
+	Measures *Measures
 }
 
 // NewMeasures realizes desired metrics.
@@ -74,11 +74,11 @@ func NewMeasures(p provider.Provider) *Measures {
 }
 
 // NewProvideMeasures converts MeasuresIn to Measures
-func NewProvideMeasures(in MeasuresIn) *Measures {
-	return &Measures{
-		WebhookRegistrationOutcome: in.WebhookRegistrationOutcome,
-	}
-}
+// func NewProvideMeasures(in MeasuresIn) *Measures {
+// 	return &Measures{
+// 		WebhookRegistrationOutcome: in.WebhookRegistrationOutcome,
+// 	}
+// }
 
 // ProvideMetrics provides the metrics relevant to this package as uber/fx options.
 func ProvideMetrics() fx.Option {
