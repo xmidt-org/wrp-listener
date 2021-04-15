@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 - Add interval check and create shutdown channel in `NewPeriodicRegisterer` [#30](https://github.com/xmidt-org/wrp-listener/pull/30)
+- Add provide functions for webhook client metrics and periodic registerer [#38](https://github.com/xmidt-org/wrp-listener/pull/38)
 
 ## [v0.2.1]
 - Downgraded uuid version [#19](https://github.com/xmidt-org/wrp-listener/pull/19)

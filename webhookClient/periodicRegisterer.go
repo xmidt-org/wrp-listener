@@ -25,7 +25,6 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/go-kit/kit/metrics/provider"
 )
 
 // A Registerer attempts to register to a webhook.  If there is a problem, an
@@ -50,7 +49,7 @@ var (
 
 // NewPeriodicRegisterer creates a registerer that attempts to register at the
 // interval given.
-func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, provider provider.Provider) (*PeriodicRegisterer, error) {
+func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, measures *Measures) (*PeriodicRegisterer, error) {
 	if interval == 0 {
 		return nil, errors.New("interval cannot be 0")
 	}
@@ -59,13 +58,11 @@ func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger
 		logger = defaultLogger
 	}
 
-	m := NewMeasures(provider)
-
 	return &PeriodicRegisterer{
 		registerer:           registerer,
 		registrationInterval: interval,
 		logger:               logger,
-		measures:             m,
+		measures:             measures,
 		shutdown:             make(chan struct{}),
 	}, nil
 }
