@@ -94,7 +94,7 @@ func (htf H) ParseAndValidate(ctx context.Context, req *http.Request, _ bascule.
 		return nil, codeError{http.StatusForbidden, emperror.With(errors.New("Invalid secret"), "secretGiven", secretGiven, "hashCalculated", sig, "body", msgBytes)}
 	}
 
-	return bascule.NewToken(htf.hashType, value, bascule.NewAttributes()), nil
+	return bascule.NewToken(htf.hashType, value, bascule.NewAttributes(map[string]interface{}{})), nil
 }
 
 // New returns the hash token factory to be used to validate a request.
