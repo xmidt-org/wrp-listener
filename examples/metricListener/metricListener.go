@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Comcast Cable Communications Management, LLC
+ * Copyright 2021 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,6 +29,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/goph/emperror"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -41,6 +43,7 @@ import (
 	"github.com/xmidt-org/webpa-common/concurrent"
 	"github.com/xmidt-org/webpa-common/logging"
 	"github.com/xmidt-org/webpa-common/server"
+	"github.com/xmidt-org/wrp-go/v2"
 	webhook "github.com/xmidt-org/wrp-listener"
 	"github.com/xmidt-org/wrp-listener/hashTokenFactory"
 	secretGetter "github.com/xmidt-org/wrp-listener/secret"
@@ -63,7 +66,7 @@ type Config struct {
 	Port                        string
 	Endpoint                    string
 	ResponseCode                int
-	JWT                         acquire.JWTAcquirerOptions
+	JWT                         acquire.RemoteBearerTokenAcquirerOptions
 }
 
 func SetLogger(logger log.Logger) func(delegate http.Handler) http.Handler {
@@ -144,8 +147,12 @@ func main() {
 	acquirer = &acquire.DefaultAcquirer{}
 
 	if config.JWT.AuthURL != "" && config.JWT.Buffer != 0 && config.JWT.Timeout != 0 {
-		a := acquire.NewJWTAcquirer(config.JWT)
-		acquirer = &a
+		a, err := acquire.NewRemoteBearerTokenAcquirer(config.JWT)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to setup token acquirer: %v\n", err.Error())
+			os.Exit(1)
+		}
+		acquirer = a
 	}
 
 	registerer, err := webhookClient.NewBasicRegisterer(acquirer, secretGetter, basicConfig)
@@ -160,7 +167,7 @@ func main() {
 
 	// start listening
 	router := mux.NewRouter()
-	router.Handle(apiBase+config.Endpoint, handler.ThenFunc(returnStatus(config.ResponseCode)))
+	router.Handle(apiBase+config.Endpoint, handler.ThenFunc(returnStatus(logger, config.ResponseCode)))
 
 	// MARK: Starting the server
 	var (
@@ -224,8 +231,27 @@ func exitIfError(logger log.Logger, err error) {
 	}
 }
 
-func returnStatus(code int) func(w http.ResponseWriter, r *http.Request) {
+func returnStatus(logger log.Logger, code int) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var message wrp.Message
+		msgBytes, err := ioutil.ReadAll(r.Body)
+		r.Body.Close()
+		if err != nil {
+			level.Error(logger).Log(logging.MessageKey(), "Could not read request body", logging.ErrorKey(), err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		err = wrp.NewDecoderBytes(msgBytes, wrp.Msgpack).Decode(&message)
+		if err != nil {
+			level.Error(logger).Log(logging.MessageKey(), "Could not decode request body", logging.ErrorKey(), err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		level.Info(logger).Log(logging.MessageKey(), "received wrp", "src", message.Source,
+			"dest", message.Destination, "content type", message.ContentType,
+			"payload size", len(message.Payload))
 		w.WriteHeader(code)
 	}
 }
