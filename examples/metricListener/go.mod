@@ -10,7 +10,6 @@ require (
 	github.com/influxdata/influxdb v1.7.7 // indirect
 	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
 	github.com/pkg/errors v0.8.1 // indirect
-	github.com/prometheus/client_golang v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
 	github.com/xmidt-org/bascule v0.5.0
