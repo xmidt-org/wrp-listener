@@ -22,7 +22,7 @@ services:
     networks:
       - back-tier
     ports:
-      - 9090:9090
+      - 9091:9090
     volumes:
       - ./docFiles/prometheus.yml:/prometheus-data/prometheus.yml
     command:  --config.file=/prometheus-data/prometheus.yml

@@ -24,7 +24,7 @@ webhookRequest:
     url: "http://host.docker.internal:7100/api/v1/endpoint"
     secret: "super secret"
   events: ["device-status.*"]
-webhookRegistrationURL: "https://127.0.0.1:6000/hook"
+webhookRegistrationURL: "http://host.docker.internal:6000/hook"
 webhookTimeout: "1m"
 webhookRegistrationInterval: "1m"
 endpoint: "/endpoint"
