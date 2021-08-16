@@ -67,6 +67,7 @@ type Config struct {
 	Endpoint                    string
 	ResponseCode                int
 	JWT                         acquire.RemoteBearerTokenAcquirerOptions
+	Basic                       string
 }
 
 func SetLogger(logger log.Logger) func(delegate http.Handler) http.Handler {
@@ -149,7 +150,14 @@ func main() {
 	if config.JWT.AuthURL != "" && config.JWT.Buffer != 0 && config.JWT.Timeout != 0 {
 		a, err := acquire.NewRemoteBearerTokenAcquirer(config.JWT)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to setup token acquirer: %v\n", err.Error())
+			fmt.Fprintf(os.Stderr, "failed to setup jwt acquirer: %v\n", err.Error())
+			os.Exit(1)
+		}
+		acquirer = a
+	} else if config.Basic != "" {
+		a, err := acquire.NewFixedAuthAcquirer("Basic " + config.Basic)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to setup basic acquirer: %v\n", err.Error())
 			os.Exit(1)
 		}
 		acquirer = a

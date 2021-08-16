@@ -29,6 +29,7 @@ webhookTimeout: "1m"
 webhookRegistrationInterval: "1m"
 endpoint: "/endpoint"
 responseCode: 202
+basic: dXNlcjpwYXNz
 jwt:
   requestHeaders: 
   authURL: ""
