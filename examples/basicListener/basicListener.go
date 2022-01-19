@@ -20,6 +20,11 @@ package main
 import (
 	"crypto/sha1"
 	"fmt"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics/provider"
+	"github.com/xmidt-org/bascule/basculehttp"
+	webhook "github.com/xmidt-org/wrp-listener"
+	"github.com/xmidt-org/wrp-listener/hashTokenFactory"
 	"net/http"
 	"os"
 	"time"
@@ -27,9 +32,6 @@ import (
 	"github.com/justinas/alice"
 
 	"github.com/xmidt-org/bascule/acquire"
-	"github.com/xmidt-org/bascule/basculehttp"
-	"github.com/xmidt-org/wrp-listener"
-	"github.com/xmidt-org/wrp-listener/hashTokenFactory"
 	"github.com/xmidt-org/wrp-listener/secret"
 	"github.com/xmidt-org/wrp-listener/webhookClient"
 )
@@ -40,13 +42,13 @@ func main() {
 	secretGetter := secretGetter.NewConstantSecret("secret1234")
 
 	// set up the middleware
-	htf, err := hashTokenFactory.New("Sha1", sha1.New, secretGetter)
+	htf, err := hashTokenFactory.New("sha1", sha1.New, secretGetter)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to setup hash token factory: %v\n", err.Error())
 		os.Exit(1)
 	}
 	authConstructor := basculehttp.NewConstructor(
-		basculehttp.WithTokenFactory("Sha1", htf),
+		basculehttp.WithTokenFactory("sha1", htf),
 		basculehttp.WithHeaderName("X-Webpa-Signature"),
 		basculehttp.WithHeaderDelimiter("="),
 	)
@@ -55,27 +57,40 @@ func main() {
 	// set up the registerer
 	basicConfig := webhookClient.BasicConfig{
 		Timeout:         5 * time.Second,
-		RegistrationURL: "http://127.0.0.1:8000/hook",
+		RegistrationURL: "http://tr1d1um:6100/api/v3/hook",
 		Request: webhook.W{
 			Config: webhook.Config{
-				URL: "http://127.0.0.1:7100/events",
+				URL: "http://listener-example:7100/events",
+				Secret: "secret1234",
 			},
-			Events: []string{"device-status.*"},
+			Events:   []string{".*"},
+			Duration: time.Minute * 1,
 		},
 	}
-	registerer, err := webhookClient.NewBasicRegisterer(&acquire.DefaultAcquirer{}, secretGetter, basicConfig)
+
+	// This Basic Auth credentials intended to be used for local testing purposes.
+	// Change this.
+	acquirer, err := acquire.NewFixedAuthAcquirer("Basic dXNlcjpwYXNz")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create fixed auth: %v\n", err.Error())
+		os.Exit(1)
+	}
+	registerer, err := webhookClient.NewBasicRegisterer(acquirer, secretGetter, basicConfig)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to setup registerer: %v\n", err.Error())
 		os.Exit(1)
 	}
-	periodicRegisterer := webhookClient.NewPeriodicRegisterer(registerer, 4*time.Minute, nil)
-
+	periodicRegisterer, err := webhookClient.NewPeriodicRegisterer(registerer, 55*time.Second, log.NewLogfmtLogger(os.Stdout), webhookClient.NewMeasures(provider.NewDiscardProvider()))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to setup periodic registerer: %v\n", err.Error())
+		os.Exit(1)
+	}
 	// start the registerer
 	periodicRegisterer.Start()
 
 	// start listening
 	http.Handle("/events", handler.ThenFunc(return200))
-	err = http.ListenAndServe("7100", nil)
+	err = http.ListenAndServe(":7100", nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error serving http requests: %v\n", err.Error())
 		os.Exit(1)
@@ -84,5 +99,6 @@ func main() {
 }
 
 func return200(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("received http request")
 	w.WriteHeader(http.StatusOK)
 }
