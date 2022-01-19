@@ -38,7 +38,7 @@ import (
 
 func main() {
 
-	// // use constant secret for hash
+	// use constant secret for hash
 	secretGetter := secretGetter.NewConstantSecret("secret1234")
 
 	// set up the middleware
