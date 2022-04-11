@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.2.4]
+- bump dependencies [#48](https://github.com/xmidt-org/wrp-listener/pull/48)
+
 ## [v0.2.3]
 - Fixed hashTokenFactory build error. [#40](https://github.com/xmidt-org/wrp-listener/pull/40)
 
@@ -32,7 +35,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Modified authentication to work with `bascule` package/repo
 - Refactored registerers
 
-[Unreleased]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.3..HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.4..HEAD
+[v0.2.4]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.3..v0.2.4
 [v0.2.3]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.2..v0.2.3
 [v0.2.2]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.1..v0.2.2
 [v0.2.1]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.0..v0.2.1

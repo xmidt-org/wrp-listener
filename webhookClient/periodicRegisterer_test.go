@@ -24,7 +24,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
-	"github.com/xmidt-org/webpa-common/xmetrics/xmetricstest"
+	"github.com/xmidt-org/webpa-common/v2/xmetrics/xmetricstest"
 	webhook "github.com/xmidt-org/wrp-listener"
 )
 
@@ -94,7 +94,7 @@ func TestNewPeriodicRegisterer(t *testing.T) {
 			m := NewMeasures(registry)
 			pr, err := NewPeriodicRegisterer(tc.registerer, tc.interval, tc.logger, m)
 			if pr != nil {
-				//make sure shutdown channel is created
+				// make sure shutdown channel is created
 				assert.NotNil(pr.shutdown)
 				tc.expectedRegisterer.shutdown = pr.shutdown
 			}
