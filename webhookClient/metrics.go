@@ -22,11 +22,11 @@ import (
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xmidt-org/touchstone/touchkit"
-	"github.com/xmidt-org/webpa-common/xmetrics"
+	"github.com/xmidt-org/webpa-common/v2/xmetrics"
 	"go.uber.org/fx"
 )
 
-//Names for our metrics
+// Names for our metrics
 const (
 	WebhookRegistrationOutcome = "webhook_registration"
 )
@@ -43,7 +43,7 @@ const (
 	FailureOutcome = "failure"
 )
 
-//Metrics returns the Metrics relevant to this package
+// Metrics returns the Metrics relevant to this package
 func Metrics() []xmetrics.Metric {
 	return []xmetrics.Metric{
 		xmetrics.Metric{
@@ -55,7 +55,7 @@ func Metrics() []xmetrics.Metric {
 	}
 }
 
-//Measures describes the defined metrics that will be used by clients.
+// Measures describes the defined metrics that will be used by clients.
 type Measures struct {
 	WebhookRegistrationOutcome metrics.Counter
 }
