@@ -20,6 +20,6 @@ require (
 	github.com/xmidt-org/webpa-common/v2 v2.0.6
 	github.com/xmidt-org/wrp-go/v3 v3.1.3
 	go.uber.org/fx v1.17.1
-	golang.org/x/sys v0.0.0-20220624220833-87e55d714810 // indirect
+	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 )
