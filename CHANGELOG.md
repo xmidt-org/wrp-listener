@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 - Dependency update
   - Introduces new vuln https://www.mend.io/vulnerability-database/CVE-2022-29526
+  - Introduces new vuln https://www.mend.io/vulnerability-database/CVE-2021-38561
 
 ## [v0.2.4]
 - bump dependencies [#48](https://github.com/xmidt-org/wrp-listener/pull/48)
