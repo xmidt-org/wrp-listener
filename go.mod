@@ -19,8 +19,7 @@ require (
 	github.com/xmidt-org/touchstone v0.1.1
 	github.com/xmidt-org/webpa-common/v2 v2.0.6
 	github.com/xmidt-org/wrp-go/v3 v3.1.3
-	go.uber.org/dig v1.15.0 // indirect
-	go.uber.org/fx v1.17.1
+	go.uber.org/fx v1.18.1
 	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 )
