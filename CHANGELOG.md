@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.2.5]
+- Patched Vulnerabilities
+  - https://github.com/xmidt-org/wrp-listener/issues/50
+  - https://github.com/xmidt-org/wrp-listener/issues/49
 - Dependency update
   - Introduces new vuln https://www.mend.io/vulnerability-database/CVE-2022-29526
   - Introduces new vuln https://www.mend.io/vulnerability-database/CVE-2021-38561
@@ -38,7 +43,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Modified authentication to work with `bascule` package/repo
 - Refactored registerers
 
-[Unreleased]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.4..HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.5..HEAD
+[v0.2.5]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.4..v0.2.5
 [v0.2.4]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.3..v0.2.4
 [v0.2.3]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.2..v0.2.3
 [v0.2.2]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.1..v0.2.2
