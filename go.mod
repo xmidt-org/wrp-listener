@@ -9,8 +9,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	github.com/xmidt-org/bascule v0.11.0
 	github.com/xmidt-org/touchstone v0.1.2
-	github.com/xmidt-org/webpa-common v1.11.5 // indirect
 	github.com/xmidt-org/webpa-common/v2 v2.0.7
-	github.com/xmidt-org/wrp-go/v3 v3.1.3
+	github.com/xmidt-org/wrp-go/v3 v3.1.4
 	go.uber.org/fx v1.18.1
 )
