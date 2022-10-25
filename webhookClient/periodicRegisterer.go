@@ -21,10 +21,11 @@ import (
 	"errors"
 	"time"
 
+	// nolint:staticcheck
 	"github.com/xmidt-org/webpa-common/v2/logging"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 )
 
 // A Registerer attempts to register to a webhook.  If there is a problem, an

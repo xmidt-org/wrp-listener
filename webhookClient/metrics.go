@@ -22,6 +22,8 @@ import (
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xmidt-org/touchstone/touchkit"
+
+	// nolint:staticcheck
 	"github.com/xmidt-org/webpa-common/v2/xmetrics"
 	"go.uber.org/fx"
 )

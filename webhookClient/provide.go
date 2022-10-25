@@ -3,7 +3,7 @@ package webhookClient
 import (
 	"time"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"go.uber.org/fx"
 )
 

@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.2.6]
+- Patched Vulnerabilities
+  - https://github.com/xmidt-org/wrp-listener/issues/56
+
 ## [v0.2.5]
 - Patched Vulnerabilities
   - https://github.com/xmidt-org/wrp-listener/issues/50
@@ -43,7 +47,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Modified authentication to work with `bascule` package/repo
 - Refactored registerers
 
-[Unreleased]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.5..HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.6..HEAD
+[v0.2.5]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.5..v0.2.6
 [v0.2.5]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.4..v0.2.5
 [v0.2.4]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.3..v0.2.4
 [v0.2.3]: https://github.com/xmidt-org/wrp-listener/compare/v0.2.2..v0.2.3
