@@ -20,7 +20,7 @@ package webhookClient
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -171,12 +171,12 @@ func TestNewBasicRegisterer(t *testing.T) {
 func TestBasicRegister(t *testing.T) {
 	goodResponse := &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(bytes.NewBufferString(`OK`)),
+		Body:       io.NopCloser(bytes.NewBufferString(`OK`)),
 		Header:     make(http.Header),
 	}
 	badResponse := &http.Response{
 		StatusCode: http.StatusNotFound,
-		Body:       ioutil.NopCloser(bytes.NewBufferString(`OK`)),
+		Body:       io.NopCloser(bytes.NewBufferString(`OK`)),
 		Header:     make(http.Header),
 	}
 

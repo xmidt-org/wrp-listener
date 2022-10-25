@@ -3,6 +3,11 @@ package main
 import (
 	"crypto/sha1"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/justinas/alice"
@@ -15,10 +20,6 @@ import (
 	"github.com/xmidt-org/wrp-listener/hashTokenFactory"
 	secretGetter "github.com/xmidt-org/wrp-listener/secret"
 	"github.com/xmidt-org/wrp-listener/webhookClient"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"time"
 )
 
 const (
@@ -141,7 +142,7 @@ func handleEventWithLogger(logger log.Logger) func(w http.ResponseWriter, r *htt
 	return func(w http.ResponseWriter, r *http.Request) {
 		var msg wrp.Message
 		var err error
-		msgBytes, err := ioutil.ReadAll(r.Body)
+		msgBytes, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
 			logger.Log("level", "error", "msg", fmt.Sprintf("failed to read body: %v", err.Error()))
