@@ -1,0 +1,37 @@
+---
+primary:
+  address: ":7100"
+pprof:
+  address: ":7102"
+  readTimeout: "15s"
+  idleTimeout: "15s"
+metric:
+  address: ":7103"
+  metricsOptions:
+    namespace: "test"
+    subsystem: "listener"
+  readTimeout: "15s"
+  idleTimeout: "15s"
+log:
+  file: "stdout"
+  level: "INFO"
+  json: true
+
+authHeader: "X-Webpa-Signature"
+authDelimiter: "="
+webhookRequest:
+  config:
+    url: "http://host.docker.internal:7100/api/v1/endpoint"
+    secret: "super secret"
+  events: ["device-status.*"]
+webhookRegistrationURL: "http://host.docker.internal:6000/hook"
+webhookTimeout: "1m"
+webhookRegistrationInterval: "1m"
+endpoint: "/endpoint"
+responseCode: 202
+basic: dXNlcjpwYXNz
+jwt:
+  requestHeaders: 
+  authURL: ""
+  timeout: 1m
+  buffer: 5s

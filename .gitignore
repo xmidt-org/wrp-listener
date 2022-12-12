@@ -19,7 +19,9 @@ report.json
 # Ignore example binaries
 examples/configurableListener/configurableListener
 examples/basicListener/basicListener
+examples/metricListener/metricListener
 examples/timedListener/timedListener
+
 
 # Ignore the various build artifacts
 .ignore
