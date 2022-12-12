@@ -48,7 +48,7 @@ const (
 // Metrics returns the Metrics relevant to this package
 func Metrics() []xmetrics.Metric {
 	return []xmetrics.Metric{
-		xmetrics.Metric{
+		{
 			Name:       WebhookRegistrationOutcome,
 			Type:       xmetrics.CounterType,
 			Help:       "Counter for the periodic registerer, providing the outcome of a registration attempt",
