@@ -20,22 +20,20 @@ package main
 import (
 	"crypto/sha1"
 	"fmt"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/metrics/provider"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/spf13/viper"
-
+	"github.com/go-kit/kit/metrics/provider"
 	"github.com/justinas/alice"
-
+	"github.com/spf13/viper"
 	"github.com/xmidt-org/bascule/acquire"
 	"github.com/xmidt-org/bascule/basculehttp"
-	"github.com/xmidt-org/wrp-listener"
+	webhook "github.com/xmidt-org/wrp-listener"
 	"github.com/xmidt-org/wrp-listener/hashTokenFactory"
-	"github.com/xmidt-org/wrp-listener/secret"
+	secretGetter "github.com/xmidt-org/wrp-listener/secret"
 	"github.com/xmidt-org/wrp-listener/webhookClient"
+	"go.uber.org/zap"
 )
 
 const (
@@ -105,7 +103,12 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to setup registerer: %v\n", err.Error())
 		os.Exit(1)
 	}
-	periodicRegisterer, err := webhookClient.NewPeriodicRegisterer(registerer, 55*time.Second, log.NewLogfmtLogger(os.Stdout), webhookClient.NewMeasures(provider.NewDiscardProvider()))
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to setup logger: %v\n", err.Error())
+		os.Exit(1)
+	}
+	periodicRegisterer, err := webhookClient.NewPeriodicRegisterer(registerer, 55*time.Second, logger, webhookClient.NewMeasures(provider.NewDiscardProvider()))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to setup periodic registerer: %v\n", err.Error())
 		os.Exit(1)

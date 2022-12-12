@@ -21,11 +21,7 @@ import (
 	"errors"
 	"time"
 
-	// nolint:staticcheck
-	"github.com/xmidt-org/webpa-common/v2/logging"
-
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
+	"go.uber.org/zap"
 )
 
 // A Registerer attempts to register to a webhook.  If there is a problem, an
@@ -39,24 +35,20 @@ type Registerer interface {
 type PeriodicRegisterer struct {
 	registerer           Registerer
 	registrationInterval time.Duration
-	logger               log.Logger
+	logger               *zap.Logger
 	measures             *Measures
 	shutdown             chan struct{}
 }
 
-var (
-	defaultLogger = log.NewNopLogger()
-)
-
 // NewPeriodicRegisterer creates a registerer that attempts to register at the
 // interval given.
-func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, measures *Measures) (*PeriodicRegisterer, error) {
+func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger *zap.Logger, measures *Measures) (*PeriodicRegisterer, error) {
 	if interval == 0 {
 		return nil, errors.New("interval cannot be 0")
 	}
 
 	if logger == nil {
-		logger = defaultLogger
+		logger = zap.NewNop()
 	}
 
 	return &PeriodicRegisterer{
@@ -101,10 +93,9 @@ func (p *PeriodicRegisterer) registerAndLog() {
 	err := p.Register()
 	if err != nil {
 		p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, FailureOutcome, ReasonLabel, GetReasonCode(err).LabelValue()).Add(1.0)
-		p.logger.Log(level.Key(), level.ErrorValue(), logging.MessageKey(), "Failed to register webhook",
-			logging.ErrorKey(), err.Error())
+		p.logger.Error("Failed to register webhook", zap.Error(err))
 	} else {
 		p.measures.WebhookRegistrationOutcome.With(OutcomeLabel, SuccessOutcome, ReasonLabel, "").Add(1.0)
-		p.logger.Log(level.Key(), level.InfoValue(), logging.MessageKey(), "Successfully registered webhook")
+		p.logger.Info("Successfully registered webhook", zap.Error(err))
 	}
 }
