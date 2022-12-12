@@ -1,14 +1,15 @@
 ---
-authHeader: "X-Wepba-Client"
+authHeader: "X-Webpa-Signature"
 authDelimiter: "="
 webhookRequest:
   config:
-    url: "http://localhost:7100/endpoint"
+    url: "http://listener-example:7100/endpoint"
     secret: "SECRET"
   events: [".*"]
-webhookRegistrationURL: "localhost:8000/hook"
+  duration: "1m"
+webhookRegistrationURL: "http://tr1d1um:6100/api/v3/hook"
 webhookTimeout: "10s"
-webhookRegistrationInterval: "4m"
+webhookRegistrationInterval: "1m"
 port: ":7100"
 endpoint: "/endpoint"
 responseCode: 202

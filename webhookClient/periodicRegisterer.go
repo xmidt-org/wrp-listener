@@ -18,13 +18,14 @@
 package webhookClient
 
 import (
+	"errors"
 	"time"
 
-	"github.com/xmidt-org/webpa-common/logging"
+	// nolint:staticcheck
+	"github.com/xmidt-org/webpa-common/v2/logging"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	"github.com/go-kit/kit/metrics/provider"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 )
 
 // A Registerer attempts to register to a webhook.  If there is a problem, an
@@ -49,19 +50,22 @@ var (
 
 // NewPeriodicRegisterer creates a registerer that attempts to register at the
 // interval given.
-func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, provider provider.Provider) *PeriodicRegisterer {
+func NewPeriodicRegisterer(registerer Registerer, interval time.Duration, logger log.Logger, measures *Measures) (*PeriodicRegisterer, error) {
+	if interval == 0 {
+		return nil, errors.New("interval cannot be 0")
+	}
+
 	if logger == nil {
 		logger = defaultLogger
 	}
-
-	m := NewMeasures(provider)
 
 	return &PeriodicRegisterer{
 		registerer:           registerer,
 		registrationInterval: interval,
 		logger:               logger,
-		measures:             m,
-	}
+		measures:             measures,
+		shutdown:             make(chan struct{}),
+	}, nil
 }
 
 // Register is just a wrapper to provide the regular Register functionality,

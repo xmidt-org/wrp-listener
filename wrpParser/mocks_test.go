@@ -15,24 +15,27 @@
  *
  */
 
-package webhookClient
+package wrpparser
 
 import (
-	"errors"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/xmidt-org/wrp-go/v3"
 )
 
-func TestErrWithReason(t *testing.T) {
-	var testObj interface{}
-	testObj = errWithReason{
-		err:    errors.New("test error with reason"),
-		reason: CreateRequestFail,
-	}
-	_, ok := testObj.(ReasonCoder)
-	assert.True(t, ok)
+type MockDeviceFinder struct {
+	mock.Mock
+}
 
-	_, ok = testObj.(error)
-	assert.True(t, ok)
+func (f *MockDeviceFinder) FindDeviceID(msg *wrp.Message) (string, error) {
+	args := f.Called(msg)
+	return args.String(0), args.Error(1)
+}
+
+type MockClassifier struct {
+	mock.Mock
+}
+
+func (c *MockClassifier) Label(msg *wrp.Message) (string, bool) {
+	args := c.Called(msg)
+	return args.String(0), args.Bool(1)
 }

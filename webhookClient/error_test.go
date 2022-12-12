@@ -18,18 +18,20 @@
 package webhookClient
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	// nolint:staticcheck
-	"github.com/xmidt-org/webpa-common/v2/xmetrics"
 )
 
-func newTestMeasure() *Measures {
-	return NewMeasures(xmetrics.MustNewRegistry(nil, Metrics))
-}
+func TestErrWithReason(t *testing.T) {
+	var testObj interface{} = errWithReason{
+		err:    errors.New("test error with reason"),
+		reason: CreateRequestFail,
+	}
+	_, ok := testObj.(ReasonCoder)
+	assert.True(t, ok)
 
-func TestSimpleRun(t *testing.T) {
-	assert := assert.New(t)
-	assert.NotNil(newTestMeasure())
+	_, ok = testObj.(error)
+	assert.True(t, ok)
 }

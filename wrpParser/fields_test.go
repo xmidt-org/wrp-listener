@@ -15,21 +15,26 @@
  *
  */
 
-package webhookClient
+package wrpparser
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	// nolint:staticcheck
-	"github.com/xmidt-org/webpa-common/v2/xmetrics"
+	"github.com/xmidt-org/wrp-go/v3"
 )
 
-func newTestMeasure() *Measures {
-	return NewMeasures(xmetrics.MustNewRegistry(nil, Metrics))
-}
+func TestGetFieldValue(t *testing.T) {
+	expectedDest := "dest"
+	expectedSource := "src"
+	testWRP := &wrp.Message{
+		Destination: expectedDest,
+		Source:      expectedSource,
+	}
+	dest := getFieldValue(Destination, testWRP)
+	src := getFieldValue(Source, testWRP)
 
-func TestSimpleRun(t *testing.T) {
 	assert := assert.New(t)
-	assert.NotNil(newTestMeasure())
+	assert.Equal(expectedDest, dest)
+	assert.Equal(expectedSource, src)
 }

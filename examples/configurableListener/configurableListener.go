@@ -20,6 +20,8 @@ package main
 import (
 	"crypto/sha1"
 	"fmt"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics/provider"
 	"net/http"
 	"os"
 	"time"
@@ -73,13 +75,13 @@ func main() {
 	secretGetter := secretGetter.NewConstantSecret(config.WebhookRequest.Config.Secret)
 
 	// set up the middleware
-	htf, err := hashTokenFactory.New("Sha1", sha1.New, secretGetter)
+	htf, err := hashTokenFactory.New("sha1", sha1.New, secretGetter)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to setup hash token factory: %v\n", err.Error())
 		os.Exit(1)
 	}
 	authConstructor := basculehttp.NewConstructor(
-		basculehttp.WithTokenFactory("Sha1", htf),
+		basculehttp.WithTokenFactory("sha1", htf),
 		basculehttp.WithHeaderName(config.AuthHeader),
 		basculehttp.WithHeaderDelimiter(config.AuthDelimiter),
 	)
@@ -91,13 +93,23 @@ func main() {
 		RegistrationURL: config.WebhookRegistrationURL,
 		Request:         config.WebhookRequest,
 	}
-	registerer, err := webhookClient.NewBasicRegisterer(&acquire.DefaultAcquirer{}, secretGetter, basicConfig)
+	// This Basic Auth credentials intended to be used for local testing purposes.
+	// Change this.
+	acquirer, err := acquire.NewFixedAuthAcquirer("Basic dXNlcjpwYXNz")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create fixed auth: %v\n", err.Error())
+		os.Exit(1)
+	}
+	registerer, err := webhookClient.NewBasicRegisterer(acquirer, secretGetter, basicConfig)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to setup registerer: %v\n", err.Error())
 		os.Exit(1)
 	}
-	periodicRegisterer := webhookClient.NewPeriodicRegisterer(registerer, config.WebhookRegistrationInterval, nil)
-
+	periodicRegisterer, err := webhookClient.NewPeriodicRegisterer(registerer, 55*time.Second, log.NewLogfmtLogger(os.Stdout), webhookClient.NewMeasures(provider.NewDiscardProvider()))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to setup periodic registerer: %v\n", err.Error())
+		os.Exit(1)
+	}
 	// start the registerer
 	periodicRegisterer.Start()
 
@@ -112,6 +124,7 @@ func main() {
 
 func returnStatus(code int) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("received http request")
 		w.WriteHeader(code)
 	}
 }
