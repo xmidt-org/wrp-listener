@@ -60,7 +60,7 @@ func main() {
 		RegistrationURL: "http://tr1d1um:6100/api/v3/hook",
 		Request: webhook.W{
 			Config: webhook.Config{
-				URL: "http://listener-example:7100/events",
+				URL:    "http://listener-example:7100/events",
 				Secret: "secret1234",
 			},
 			Events:   []string{".*"},
