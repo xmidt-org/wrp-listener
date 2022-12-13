@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Replace the logger with zap. [#81](https://github.com/xmidt-org/wrp-listener/pull/81)
+
 ## [v0.2.6]
 - Patched Vulnerabilities
   - https://github.com/xmidt-org/wrp-listener/issues/56
