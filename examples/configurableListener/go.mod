@@ -8,4 +8,5 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/xmidt-org/bascule v0.10.1
 	github.com/xmidt-org/wrp-listener v0.2.3
+	go.uber.org/zap v1.16.0
 )

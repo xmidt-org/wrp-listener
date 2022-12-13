@@ -28,3 +28,6 @@ examples/timedListener/timedListener
 
 # Vim
 *.swp
+
+go.work
+go.work.sum

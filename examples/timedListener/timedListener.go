@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/justinas/alice"
 	"github.com/spf13/viper"
@@ -20,6 +19,7 @@ import (
 	"github.com/xmidt-org/wrp-listener/hashTokenFactory"
 	secretGetter "github.com/xmidt-org/wrp-listener/secret"
 	"github.com/xmidt-org/wrp-listener/webhookClient"
+	"go.uber.org/zap"
 )
 
 const (
@@ -75,7 +75,11 @@ func main() {
 	}
 
 	// build json logger
-	logger := log.NewJSONLogger(os.Stderr)
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create logger: %v\n", err.Error())
+		os.Exit(1)
+	}
 
 	// use constant secret for hash
 	secretGetter := secretGetter.NewConstantSecret(config.Webhook.Request.Config.Secret)
@@ -103,17 +107,17 @@ func main() {
 	// get acquirer
 	acquirer, err := determineTokenAcquirer(config.Webhook)
 	if err != nil {
-		logger.Log("level", "error", "msg", "failed to determine token acquirer")
+		logger.Error("failed to determine token acquirer", zap.Error(err))
 	}
 
 	registerer, err := webhookClient.NewBasicRegisterer(acquirer, secretGetter, basicConfig)
 	if err != nil {
-		logger.Log("level", "error", "msg", fmt.Sprintf("failed to setup registerer: %v", err.Error()))
+		logger.Error("failed to setup registerer", zap.Error(err))
 		os.Exit(1)
 	}
 	periodicRegisterer, err := webhookClient.NewPeriodicRegisterer(registerer, config.Webhook.RegistrationInterval, logger, webhookClient.NewMeasures(provider.NewDiscardProvider()))
 	if err != nil {
-		logger.Log("level", "error", "msg", fmt.Sprintf("failed to setup periodic registerer: %v\n", err.Error()))
+		logger.Error("failed to periodic registerer", zap.Error(err))
 		os.Exit(1)
 	}
 	// start the registerer
@@ -123,7 +127,7 @@ func main() {
 	http.Handle(apiBase+"/events", handler.ThenFunc(handleEventWithLogger(logger)))
 	go func() {
 		err = http.ListenAndServe(config.Server.Address, nil)
-		logger.Log("level", "error", "msg", fmt.Sprintf("listener stopped: %v", err.Error()))
+		logger.Error("listener stopped", zap.Error(err))
 
 	}()
 
@@ -138,21 +142,21 @@ func main() {
 	// end of program
 }
 
-func handleEventWithLogger(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
+func handleEventWithLogger(logger *zap.Logger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var msg wrp.Message
 		var err error
 		msgBytes, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
-			logger.Log("level", "error", "msg", fmt.Sprintf("failed to read body: %v", err.Error()))
+			logger.Error("failed to read body", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		err = wrp.NewDecoderBytes(msgBytes, wrp.Msgpack).Decode(&msg)
 		if err != nil {
-			logger.Log("level", "error", "msg", fmt.Sprintf("failed to decode body: %v", err.Error()))
+			logger.Error("failed to decode body", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -160,7 +164,7 @@ func handleEventWithLogger(logger log.Logger) func(w http.ResponseWriter, r *htt
 		// create interpreted event
 		event, err := interpreter.NewEvent(msg)
 		if err != nil {
-			logger.Log("level", "error", "msg", fmt.Sprintf("failed to create interpreted event: %v", err.Error()))
+			logger.Error("failed to create interpreted event", zap.Error(err))
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -168,14 +172,14 @@ func handleEventWithLogger(logger log.Logger) func(w http.ResponseWriter, r *htt
 		// print out deviceID
 		deviceID, err := event.DeviceID()
 		if err != nil {
-			logger.Log("level", "error", "msg", fmt.Sprintf("failed to get device id: %v", err.Error()))
+			logger.Error("failed to get device id", zap.Error(err))
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 		// print out eventType
 		eventType, err := event.EventType()
 		if err != nil {
-			logger.Log("level", "error", "msg", fmt.Sprintf("failed to get event type: %v", err.Error()))
+			logger.Error("failed to get event type", zap.Error(err))
 			w.WriteHeader(http.StatusOK)
 			return
 		}

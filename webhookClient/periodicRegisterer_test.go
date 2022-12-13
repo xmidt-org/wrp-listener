@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	// nolint:staticcheck
 	"github.com/xmidt-org/webpa-common/v2/xmetrics/xmetricstest"
@@ -45,14 +45,14 @@ func TestNewPeriodicRegisterer(t *testing.T) {
 		registrationURL: "random string",
 	}
 
-	logger := log.NewNopLogger()
+	logger := zap.NewNop()
 	validInterval, _ := time.ParseDuration("10s")
 
 	tests := []struct {
 		description        string
 		registerer         Registerer
 		interval           time.Duration
-		logger             log.Logger
+		logger             *zap.Logger
 		expectedRegisterer *PeriodicRegisterer
 		expectedErr        error
 	}{
@@ -76,7 +76,7 @@ func TestNewPeriodicRegisterer(t *testing.T) {
 			expectedRegisterer: &PeriodicRegisterer{
 				registerer:           &basicRegisterer,
 				registrationInterval: validInterval,
-				logger:               defaultLogger,
+				logger:               logger,
 				measures:             m,
 			},
 			expectedErr: nil,

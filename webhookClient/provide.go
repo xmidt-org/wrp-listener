@@ -3,8 +3,8 @@ package webhookClient
 import (
 	"time"
 
-	"github.com/go-kit/log"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 // PeriodicRegistererIn is an uber/fx parameter with the in information needed to create a new PeriodicRegisterer.
@@ -12,7 +12,7 @@ type PeriodicRegistererIn struct {
 	fx.In
 	Registerer *BasicRegisterer
 	Interval   time.Duration `name:"periodic_registration_interval"`
-	Logger     log.Logger
+	Logger     *zap.Logger
 	Measures   *Measures
 }
 

@@ -10,4 +10,5 @@ require (
 	github.com/xmidt-org/interpreter v0.0.7
 	github.com/xmidt-org/wrp-go/v3 v3.0.2
 	github.com/xmidt-org/wrp-listener v0.2.3
+	go.uber.org/zap v1.16.0
 )
