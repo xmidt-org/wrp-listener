@@ -11,7 +11,7 @@ require (
 	github.com/xmidt-org/touchstone v0.1.2
 	github.com/xmidt-org/webpa-common/v2 v2.0.7
 	github.com/xmidt-org/wrp-go/v3 v3.1.4
-	go.uber.org/fx v1.18.2
+	go.uber.org/fx v1.19.0
 	go.uber.org/zap v1.24.0
 )
 
@@ -48,7 +48,7 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/xmidt-org/arrange v0.3.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/dig v1.15.0 // indirect
+	go.uber.org/dig v1.16.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
