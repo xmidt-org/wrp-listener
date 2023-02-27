@@ -6,7 +6,7 @@ require (
 	github.com/go-kit/kit v0.12.0
 	github.com/goph/emperror v0.17.3-0.20190703203600-60a8d9faa17b
 	github.com/prometheus/client_golang v1.14.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/xmidt-org/bascule v0.11.4
 	github.com/xmidt-org/touchstone v0.1.2
 	github.com/xmidt-org/webpa-common/v2 v2.1.0
