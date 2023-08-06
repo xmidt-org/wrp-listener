@@ -58,7 +58,7 @@ type SecretGetter interface {
 
 // BasicRegisterer sends POST requests to register at the webhook URL provided.
 type BasicRegisterer struct {
-	requestTemplate webhook.W
+	requestTemplate webhook.Config
 	registrationURL string
 	client          *http.Client
 
@@ -72,7 +72,7 @@ type BasicConfig struct {
 	Timeout         time.Duration
 	ClientTransport http.RoundTripper
 	RegistrationURL string
-	Request         webhook.W
+	Request         webhook.Config
 }
 
 // NewBasicRegisterer returns a basic registerer set up with the configuration
@@ -92,7 +92,7 @@ func NewBasicRegisterer(acquirer Acquirer, secret SecretGetter, config BasicConf
 		return nil, errors.New("invalid registration URL")
 	}
 
-	if config.Request.Config.URL == "" {
+	if config.Request.URL == "" {
 		return nil, errors.New("invalid webhook config URL")
 	}
 
@@ -107,8 +107,8 @@ func NewBasicRegisterer(acquirer Acquirer, secret SecretGetter, config BasicConf
 		requestTemplate: config.Request,
 	}
 
-	if basic.requestTemplate.Config.ContentType == "" {
-		basic.requestTemplate.Config.ContentType = DefaultContentType
+	if basic.requestTemplate.ContentType == "" {
+		basic.requestTemplate.ContentType = DefaultContentType
 	}
 
 	if len(basic.requestTemplate.Matcher.DeviceID) == 0 {
@@ -141,7 +141,7 @@ func (b *BasicRegisterer) Register() error {
 			reason: GetSecretFail,
 		}
 	}
-	b.requestTemplate.Config.Secret = secret
+	b.requestTemplate.Secret = secret
 	marshaledBody, errMarshal := json.Marshal(&b.requestTemplate)
 	if errMarshal != nil {
 		return errWithReason{

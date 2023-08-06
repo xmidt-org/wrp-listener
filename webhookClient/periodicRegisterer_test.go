@@ -41,7 +41,7 @@ func TestNewPeriodicRegisterer(t *testing.T) {
 	basicRegisterer := BasicRegisterer{
 		acquirer:        mockAcquirer,
 		secretGetter:    mockSecretGetter,
-		requestTemplate: webhook.W{},
+		requestTemplate: webhook.Config{},
 		registrationURL: "random string",
 	}
 

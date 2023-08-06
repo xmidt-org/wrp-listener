@@ -50,12 +50,10 @@ func TestNewBasicRegisterer(t *testing.T) {
 				RegistrationURL: "/r",
 				Timeout:         5 * time.Minute,
 				ClientTransport: mockTransport,
-				Request: webhook.W{
-					Config: webhook.Config{
-						URL:         "/",
-						ContentType: "text/json",
-					},
-					Events: []string{""},
+				Request: webhook.Config{
+					URL:         "/",
+					ContentType: "text/json",
+					Events:      []string{""},
 					Matcher: webhook.Matcher{
 						DeviceID: []string{"mac:1234.*"},
 					},
@@ -69,12 +67,10 @@ func TestNewBasicRegisterer(t *testing.T) {
 					Transport: mockTransport,
 				},
 				registrationURL: "/r",
-				requestTemplate: webhook.W{
-					Config: webhook.Config{
-						URL:         "/",
-						ContentType: "text/json",
-					},
-					Events: []string{""},
+				requestTemplate: webhook.Config{
+					URL:         "/",
+					ContentType: "text/json",
+					Events:      []string{""},
 					Matcher: webhook.Matcher{
 						DeviceID: []string{"mac:1234.*"},
 					},
@@ -88,10 +84,8 @@ func TestNewBasicRegisterer(t *testing.T) {
 			secret:      mockSecretGetter,
 			config: BasicConfig{
 				RegistrationURL: "/r",
-				Request: webhook.W{
-					Config: webhook.Config{
-						URL: "/",
-					},
+				Request: webhook.Config{
+					URL:    "/",
 					Events: []string{""},
 				},
 			},
@@ -102,12 +96,10 @@ func TestNewBasicRegisterer(t *testing.T) {
 					Timeout: DefaultTimeout,
 				},
 				registrationURL: "/r",
-				requestTemplate: webhook.W{
-					Config: webhook.Config{
-						URL:         "/",
-						ContentType: DefaultContentType,
-					},
-					Events: []string{""},
+				requestTemplate: webhook.Config{
+					URL:         "/",
+					ContentType: DefaultContentType,
+					Events:      []string{""},
 					Matcher: webhook.Matcher{
 						DeviceID: []string{DefaultDeviceRegexp},
 					},
@@ -145,10 +137,8 @@ func TestNewBasicRegisterer(t *testing.T) {
 			secret:      mockSecretGetter,
 			config: BasicConfig{
 				RegistrationURL: "/r",
-				Request: webhook.W{
-					Config: webhook.Config{
-						URL: "/",
-					},
+				Request: webhook.Config{
+					URL: "/",
 				},
 			},
 			expectedErr: errors.New("need at least one regular expression"),
