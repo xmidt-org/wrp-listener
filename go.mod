@@ -9,7 +9,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/xmidt-org/bascule v0.11.5
 	github.com/xmidt-org/touchstone v0.1.2
-	github.com/xmidt-org/webpa-common/v2 v2.2.1
+	github.com/xmidt-org/webpa-common/v2 v2.2.2
 	github.com/xmidt-org/wrp-go/v3 v3.1.6
 	go.uber.org/fx v1.20.0
 	go.uber.org/zap v1.25.0
@@ -49,8 +49,8 @@ require (
 	github.com/xmidt-org/sallust v0.2.2 // indirect
 	go.uber.org/dig v1.17.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
