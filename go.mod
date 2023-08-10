@@ -7,7 +7,7 @@ require (
 	github.com/goph/emperror v0.17.3-0.20190703203600-60a8d9faa17b
 	github.com/prometheus/client_golang v1.16.0
 	github.com/stretchr/testify v1.8.4
-	github.com/xmidt-org/bascule v0.11.5
+	github.com/xmidt-org/bascule v0.11.6
 	github.com/xmidt-org/touchstone v0.1.2
 	github.com/xmidt-org/webpa-common/v2 v2.2.2
 	github.com/xmidt-org/wrp-go/v3 v3.1.6
