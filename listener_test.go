@@ -446,3 +446,79 @@ func TestNormalUsage(t *testing.T) {
 	// Re-stop because it could happen.
 	whl.Stop()
 }
+
+func TestListener_Accept(t *testing.T) {
+	tests := []struct {
+		description  string
+		opt          Option
+		opts         []Option
+		expectBefore []string
+		secrets      []string
+	}{
+		{
+			description: "simple test",
+			secrets:     []string{"foo"},
+		}, {
+			description:  "simple test",
+			opt:          Secret("bar"),
+			expectBefore: []string{"bar"},
+			secrets:      []string{"foo"},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			r := validWHR
+			opts := append(tc.opts, tc.opt)
+			l, err := New(&r, opts...)
+			require.NotNil(l)
+			require.NoError(err)
+
+			if tc.expectBefore == nil {
+				tc.expectBefore = []string{}
+			}
+			assert.Equal(tc.expectBefore, l.acceptedSecrets)
+
+			l.Accept(tc.secrets)
+			assert.Equal(tc.secrets, l.acceptedSecrets)
+		})
+	}
+}
+
+func TestListener_String(t *testing.T) {
+	tests := []struct {
+		description string
+		opt         Option
+		opts        []Option
+		str         string
+	}{
+		{
+			description: "simple test",
+			str:         "Listener()",
+		}, {
+			description: "simple test",
+			opt:         Secret("bar"),
+			str:         "Listener(Secret(***))",
+		}, {
+			description: "simple test",
+			opts:        []Option{Secret("bar"), AcceptSHA1()},
+			str:         "Listener(Secret(***), AcceptSHA1())",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			r := validWHR
+			opts := append(tc.opts, tc.opt)
+			l, err := New(&r, opts...)
+			require.NotNil(l)
+			require.NoError(err)
+
+			assert.Equal(tc.str, l.String())
+		})
+	}
+}

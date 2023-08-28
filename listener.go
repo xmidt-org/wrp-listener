@@ -36,6 +36,7 @@ type Listener struct {
 	client          *http.Client
 	shutdown        chan struct{}
 	update          chan struct{}
+	running         bool
 	wg              sync.WaitGroup
 	getAuth         func() (string, error)
 	logger          *zap.Logger
@@ -60,6 +61,7 @@ func New(r *webhook.Registration, opts ...Option) (*Listener, error) {
 		logger:          zap.NewNop(),
 		client:          http.DefaultClient,
 		getAuth:         func() (string, error) { return "", nil },
+		shutdown:        make(chan struct{}),
 		update:          make(chan struct{}, 1),
 		metrics:         new(Measure).init(),
 		acceptedSecrets: make([]string, 0),
@@ -103,13 +105,9 @@ func (l *Listener) Register() error {
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	if l.shutdown != nil {
+	if l.running {
 		return nil
 	}
-
-	// Make the channel so it can be closed in Stop().  This allows reseting the
-	// listener in the "one shot" case.
-	l.shutdown = make(chan struct{})
 
 	if l.interval == 0 {
 		return l.register(true)
@@ -117,6 +115,7 @@ func (l *Listener) Register() error {
 
 	l.wg.Add(1)
 	go l.run()
+	l.running = true
 
 	return nil
 }
@@ -125,15 +124,18 @@ func (l *Listener) Register() error {
 // no-op.
 func (l *Listener) Stop() {
 	l.m.Lock()
-	defer l.m.Unlock()
 
-	if l.shutdown == nil {
+	if !l.running {
+		l.m.Unlock()
 		return
 	}
 
 	close(l.shutdown)
+	l.running = false
+
+	l.m.Unlock()
+
 	l.wg.Wait()
-	l.shutdown = nil
 }
 
 // Use sets the secret to use for the webhook registration.  If the listener is
@@ -203,6 +205,9 @@ func (l *Listener) String() string {
 	buf.WriteString("Listener(")
 	comma := ""
 	for _, opt := range l.opts {
+		if opt == nil {
+			continue
+		}
 		buf.WriteString(comma)
 		buf.WriteString(opt.String())
 		comma = ", "
