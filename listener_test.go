@@ -447,6 +447,96 @@ func TestNormalUsage(t *testing.T) {
 	whl.Stop()
 }
 
+func TestSingleShotUsage(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	var m sync.Mutex
+
+	expectSecret := []string{"secret1"}
+
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				assert.NoError(err)
+				r.Body.Close()
+
+				var reg webhook.Registration
+				err = json.Unmarshal(body, &reg)
+				assert.NoError(err)
+
+				found := false
+				m.Lock()
+				defer m.Unlock()
+				for _, s := range expectSecret {
+					if s == reg.Config.Secret {
+						found = true
+						break
+					}
+				}
+
+				assert.True(found)
+
+				w.WriteHeader(http.StatusOK)
+			},
+		),
+	)
+	defer server.Close()
+
+	// Create the listener.
+	whl, err := New(&webhook.Registration{
+		Address: server.URL,
+		Events: []string{
+			"foo",
+		},
+		Config: webhook.DeliveryConfig{
+			Secret: "secret1",
+		},
+		Duration: webhook.CustomDuration(5 * time.Minute),
+	},
+		Once(),
+	)
+	require.NotNil(whl)
+	require.NoError(err)
+
+	// Register the webhook.
+	err = whl.Register()
+	assert.NoError(err)
+
+	// Re-register because it could happen.
+	err = whl.Register()
+	assert.NoError(err)
+
+	// Wait a bit then roll the secret..
+	time.Sleep(time.Millisecond)
+	m.Lock()
+	expectSecret = append(expectSecret, "secret2", "secret3", "secret4")
+	m.Unlock()
+
+	err = whl.Use("secret2")
+	assert.NoError(err)
+
+	err = whl.Use("secret3")
+	assert.NoError(err)
+
+	err = whl.Use("secret4")
+	assert.NoError(err)
+
+	// Wait a bit then remove the prior secret from the list of accepted secrets.
+	time.Sleep(time.Millisecond)
+	m.Lock()
+	expectSecret = []string{"secret5"}
+	m.Unlock()
+
+	// Wait a bit then unregister.
+	time.Sleep(time.Millisecond)
+	whl.Stop()
+
+	// Re-stop because it could happen.
+	whl.Stop()
+}
+
 func TestListener_Accept(t *testing.T) {
 	tests := []struct {
 		description  string

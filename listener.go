@@ -156,7 +156,9 @@ func (l *Listener) use(secret string) error {
 		return multierr.Combine(err, fmt.Errorf("%w: unable to marshal the registration", ErrInput))
 	}
 
-	l.update <- struct{}{}
+	if l.running {
+		l.update <- struct{}{}
+	}
 
 	return nil
 }
