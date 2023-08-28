@@ -417,6 +417,13 @@ func TestNormalUsage(t *testing.T) {
 	require.NotNil(whl)
 	require.NoError(err)
 
+	// Register the webhook before has started
+	err = whl.Use("secret1")
+	assert.NoError(err)
+
+	err = whl.Use("secret1")
+	assert.NoError(err)
+
 	// Register the webhook.
 	err = whl.Register()
 	assert.NoError(err)
@@ -431,7 +438,8 @@ func TestNormalUsage(t *testing.T) {
 	expectSecret = append(expectSecret, "secret2")
 	m.Unlock()
 
-	whl.Use("secret2")
+	err = whl.Use("secret2")
+	assert.NoError(err)
 
 	// Wait a bit then remove the prior secret from the list of accepted secrets.
 	time.Sleep(time.Millisecond)
