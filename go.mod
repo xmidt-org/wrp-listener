@@ -3,7 +3,7 @@ module github.com/xmidt-org/wrp-listener
 go 1.19
 
 require (
-	github.com/go-kit/kit v0.12.0
+	github.com/go-kit/kit v0.13.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/stretchr/testify v1.8.4
 	github.com/xmidt-org/bascule v0.11.6
