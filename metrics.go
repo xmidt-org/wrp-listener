@@ -67,7 +67,7 @@ type MeasureRegistration struct {
 	// Label is the label used for the counter.
 	Label string `default:"outcome"`
 
-	// AuthFetchingFailure is the label used when the auth fetching fails.
+	// AuthFetchingFailure is the label used when the authorization fetching fails.
 	AuthFetchingFailure string `default:"failure_fetching_auth"`
 
 	// NewRequestFailure is the label used when the registration fails to create
@@ -107,12 +107,24 @@ func (m *MeasureRegistration) incStatusCode(code int) {
 //
 // Counter.With(Label, Outcome).Add(1) is called.
 type MeasureTokenOutcome struct {
-	Label               string          `default:"outcome"`
-	Valid               string          `default:"success"`
-	NoTokenHeader       string          `default:"failure_no_token_header"`
-	InvalidHeaderFormat string          `default:"failure_invalid_header_format"`
-	AlgorithmNotFound   string          `default:"failure_algorithm_not_found"`
-	Counter             metrics.Counter `default:"discard.NewCounter()"`
+	// Label is the label used for the counter.
+	Label string `default:"outcome"`
+
+	// Valid is the label used when the token is valid.
+	Valid string `default:"success"`
+
+	// NoTokenHeader is the label used when the token header is missing.
+	NoTokenHeader string `default:"failure_no_token_header"`
+
+	// InvalidHeaderFormat is the label used when the token header is invalid.
+	InvalidHeaderFormat string `default:"failure_invalid_header_format"`
+
+	// AlgorithmNotFound is the label used when the algorithm is not found.
+	AlgorithmNotFound string `default:"failure_algorithm_not_found"`
+
+	// Counter is the counter used to count the number of times the Tokenize()
+	// method has been called with it's outcome.
+	Counter metrics.Counter `default:"discard.NewCounter()"`
 }
 
 func (m *MeasureTokenOutcome) incNoTokenHeader() {
@@ -137,7 +149,11 @@ func (m *MeasureTokenOutcome) incValid() {
 //
 // Counter.With(Label, alg).Add(1) is called.
 type MeasureTokenAlgorithmUsed struct {
-	Label   string          `default:"alg"`
+	// Label is the label used for the counter.
+	Label string `default:"alg"`
+
+	// Counter is the counter used to count the number of times each algorithm
+	// has been used to tokenize a request.
 	Counter metrics.Counter `default:"discard.NewCounter()"`
 }
 
@@ -151,7 +167,11 @@ func (m *MeasureTokenAlgorithmUsed) inc(alg string) {
 //
 // Counter.With(Label, alg).Add(1) is called for each offered algorithm.
 type MeasureTokenAlgorithms struct {
-	Label   string          `default:"alg"`
+	// Label is the label used for the counter.
+	Label string `default:"alg"`
+
+	// Counter is the counter used to count the number of times each algorithm
+	// has been offered to Tokenize in a request.
 	Counter metrics.Counter `default:"discard.NewCounter()"`
 }
 
@@ -163,9 +183,13 @@ func (m *MeasureTokenAlgorithms) inc(algs []string) {
 
 // MeasureTokenHeaderUsed is a metric and configuration that holds the number
 //
-// Counter.With(Label, header).Add(1) is called for each header.
+// Counter.With(Label, header).Add(1) is called for each header format used.
 type MeasureTokenHeaderUsed struct {
-	Label   string          `default:"header"`
+	// Label is the label used for the counter.
+	Label string `default:"header"`
+
+	// Counter is the counter used to count the number of times each header
+	// format has been used.
 	Counter metrics.Counter `default:"discard.NewCounter()"`
 }
 
@@ -178,13 +202,27 @@ func (m *MeasureTokenHeaderUsed) inc(header string) {
 //
 // Counter.With(Label, Outcome).Add(1) is called.
 type MeasureAuthorization struct {
-	Label             string          `default:"outcome"`
-	Valid             string          `default:"success"`
-	InvalidSignature  string          `default:"failure_invalid_signature"`
-	EmptyBody         string          `default:"failure_empty_body"`
-	UnableToReadBody  string          `default:"failure_unable_to_read_body"`
-	SignatureMismatch string          `default:"failure_signature_mismatch"`
-	Counter           metrics.Counter `default:"discard.NewCounter()"`
+	// Label is the label used for the counter.
+	Label string `default:"outcome"`
+
+	// Valid is the label used when the authorization is valid.
+	Valid string `default:"success"`
+
+	// InvalidSignature is the label used when the signature is invalid.
+	InvalidSignature string `default:"failure_invalid_signature"`
+
+	// EmptyBody is the label used when the body is empty.
+	EmptyBody string `default:"failure_empty_body"`
+
+	// UnableToReadBody is the label used when the body cannot be read.
+	UnableToReadBody string `default:"failure_unable_to_read_body"`
+
+	// SignatureMismatch is the label used when the signature does not match.
+	SignatureMismatch string `default:"failure_signature_mismatch"`
+
+	// Counter is the counter used to count the number of times the authorization
+	// has been attempted and the resulting outcome.
+	Counter metrics.Counter `default:"discard.NewCounter()"`
 }
 
 func (m *MeasureAuthorization) incInvalidSignature() {
