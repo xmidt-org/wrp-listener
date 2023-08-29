@@ -334,9 +334,9 @@ func (h hashOption) String() string {
 	return h.text
 }
 
-// RegistrationOpts is an option that provides the webhook.Options to apply
+// WebhookOpts is an option that provides the webhook.Options to apply
 // during the validation of the registration of the webhook.
-func RegistrationOpts(opts ...webhook.Option) Option {
+func WebhookOpts(opts ...webhook.Option) Option {
 	return &registrationOptsOption{
 		opts: opts,
 	}

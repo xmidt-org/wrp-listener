@@ -83,7 +83,7 @@ func TestOptionStrings(t *testing.T) {
 			in:       AcceptCustom("foo", sha256.New),
 			expected: "AcceptCustom(foo, fn)",
 		}, {
-			in:       RegistrationOpts(webhook.AtLeastOneEvent(), webhook.DeviceIDRegexMustCompile()),
+			in:       WebhookOpts(webhook.AtLeastOneEvent(), webhook.DeviceIDRegexMustCompile()),
 			expected: "RegistrationOpts(AtLeastOneEvent(), DeviceIDRegexMustCompile())",
 		}, {
 			in:       Context(context.Background()),
@@ -344,7 +344,7 @@ func TestRegistrationOpts(t *testing.T) {
 		{
 			description: "assert RegistrationOpts() works",
 			r:           validWHR,
-			opt:         RegistrationOpts(webhook.DeviceIDRegexMustCompile()),
+			opt:         WebhookOpts(webhook.DeviceIDRegexMustCompile()),
 		}, {
 			description: "assert RegistrationOpts() works, catching an error",
 			r: webhook.Registration{
@@ -353,7 +353,7 @@ func TestRegistrationOpts(t *testing.T) {
 					DeviceID: []string{"invalid \\\\("},
 				},
 			},
-			opt:         RegistrationOpts(webhook.DeviceIDRegexMustCompile()),
+			opt:         WebhookOpts(webhook.DeviceIDRegexMustCompile()),
 			expectedErr: ErrInput,
 		},
 	}
