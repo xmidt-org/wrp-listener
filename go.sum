@@ -2,8 +2,6 @@ github.com/VividCortex/gohistogram v1.0.0 h1:6+hBz+qvs0JOrrNhhmR7lFxo5sINxBCGXrd
 github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/go-kit/kit v0.12.0 h1:e4o3o3IsBfAKQh5Qbbiqyfu97Ku7jrO/JbohvztANh4=
-github.com/go-kit/kit v0.12.0/go.mod h1:lHd+EkCZPIwYItmGDDRdhinkzX2A1sj+M9biaEaizzs=
 github.com/go-kit/kit v0.13.0 h1:OoneCcHKHQ03LfBpoQCUfCluwd2Vt3ohz+kvbJneZAU=
 github.com/go-kit/kit v0.13.0/go.mod h1:phqEHMMUbyrCFCTgH48JueqrM3md2HcAZ8N3XE4FKDg=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
@@ -14,8 +12,6 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/xmidt-org/urlegit v0.1.0 h1:WZLlWo0e5JNZabLEi7/1+sK/np9qrH9XnoB+ZdsHieM=
 github.com/xmidt-org/urlegit v0.1.0/go.mod h1:ih/VtgW3xfpV7FNIrHUpNdP0GapcfLOND8y0JwH51vA=
-github.com/xmidt-org/webhook-schema v0.0.0-20230820181123-2f0ce53a411d h1:G8KFNYYrU0isU7DxEztdvk7wosEpADICfmDbODYIfmE=
-github.com/xmidt-org/webhook-schema v0.0.0-20230820181123-2f0ce53a411d/go.mod h1:x3G1lmhryIbr6QXLyzagVkcfY1ZhBxGlP0CdvRD3zZI=
 github.com/xmidt-org/webhook-schema v0.1.0 h1:QYutPymtGd6OvukVHTDwpQIEvmk5uNnN8CgbppS089A=
 github.com/xmidt-org/webhook-schema v0.1.0/go.mod h1:x3G1lmhryIbr6QXLyzagVkcfY1ZhBxGlP0CdvRD3zZI=
 go.uber.org/goleak v1.2.1 h1:NBol2c7O1ZokfZ0LEU9K6Whx/KnwvepVetCUhtKja4A=
