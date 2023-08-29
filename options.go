@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"hash"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/xmidt-org/webhook-schema"
 	"go.uber.org/zap"
 )
 
@@ -329,4 +331,35 @@ func (h hashOption) apply(lis *Listener) error {
 
 func (h hashOption) String() string {
 	return h.text
+}
+
+// RegistrationOpts is an option that provides the webhook.Options to apply
+// during the validation of the registration of the webhook.
+func RegistrationOpts(opts ...webhook.Option) Option {
+	return &registrationOptsOption{
+		opts: opts,
+	}
+}
+
+type registrationOptsOption struct {
+	opts []webhook.Option
+}
+
+func (r registrationOptsOption) apply(lis *Listener) error {
+	lis.registrationOpts = append(lis.registrationOpts, r.opts...)
+	return nil
+}
+
+func (r registrationOptsOption) String() string {
+	buf := strings.Builder{}
+
+	buf.WriteString("RegistrationOpts(")
+	for i, opt := range r.opts {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		buf.WriteString(opt.String())
+	}
+	buf.WriteString(")")
+	return buf.String()
 }

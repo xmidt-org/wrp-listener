@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/webhook-schema"
 	"go.uber.org/zap"
 )
 
@@ -80,6 +81,9 @@ func TestOptionStrings(t *testing.T) {
 		}, {
 			in:       AcceptCustom("foo", sha256.New),
 			expected: "AcceptCustom(foo, fn)",
+		}, {
+			in:       RegistrationOpts(webhook.AtLeastOneEvent(), webhook.DeviceIDRegexMustCompile()),
+			expected: "RegistrationOpts(AtLeastOneEvent(), DeviceIDRegexMustCompile())",
 		},
 	}
 
@@ -325,6 +329,27 @@ func TestHashes(t *testing.T) {
 			description: "assert Custom nil errors",
 			r:           validWHR,
 			opt:         AcceptCustom("foo", nil),
+			expectedErr: ErrInput,
+		},
+	}
+	commonNewTest(t, tests)
+}
+
+func TestRegistrationOpts(t *testing.T) {
+	tests := []newTest{
+		{
+			description: "assert RegistrationOpts() works",
+			r:           validWHR,
+			opt:         RegistrationOpts(webhook.DeviceIDRegexMustCompile()),
+		}, {
+			description: "assert RegistrationOpts() works, catching an error",
+			r: webhook.Registration{
+				Duration: webhook.CustomDuration(5 * time.Minute),
+				Matcher: webhook.MetadataMatcherConfig{
+					DeviceID: []string{"invalid \\\\("},
+				},
+			},
+			opt:         RegistrationOpts(webhook.DeviceIDRegexMustCompile()),
 			expectedErr: ErrInput,
 		},
 	}

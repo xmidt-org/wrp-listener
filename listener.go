@@ -30,22 +30,23 @@ const (
 // It can be configured to register the webhook at a given interval, as well as
 // it can also be configured to accept multiple secrets and hash algorithms.
 type Listener struct {
-	m               sync.RWMutex
-	registration    *webhook.Registration
-	interval        time.Duration
-	client          *http.Client
-	shutdown        chan struct{}
-	update          chan struct{}
-	running         bool
-	wg              sync.WaitGroup
-	getAuth         func() (string, error)
-	logger          *zap.Logger
-	metrics         *Measure
-	opts            []Option
-	body            []byte
-	acceptedSecrets []string
-	hashPreferences []string
-	hashes          map[string]func() hash.Hash
+	m                sync.RWMutex
+	registration     *webhook.Registration
+	registrationOpts []webhook.Option
+	interval         time.Duration
+	client           *http.Client
+	shutdown         chan struct{}
+	update           chan struct{}
+	running          bool
+	wg               sync.WaitGroup
+	getAuth          func() (string, error)
+	logger           *zap.Logger
+	metrics          *Measure
+	opts             []Option
+	body             []byte
+	acceptedSecrets  []string
+	hashPreferences  []string
+	hashes           map[string]func() hash.Hash
 }
 
 // Option is an interface that is used to configure the webhook listener.
@@ -57,17 +58,18 @@ type Option interface {
 // New creates a new webhook listener with the given registration and options.
 func New(r *webhook.Registration, opts ...Option) (*Listener, error) {
 	l := Listener{
-		registration:    r,
-		logger:          zap.NewNop(),
-		client:          http.DefaultClient,
-		getAuth:         func() (string, error) { return "", nil },
-		shutdown:        make(chan struct{}),
-		update:          make(chan struct{}, 1),
-		metrics:         new(Measure).init(),
-		acceptedSecrets: make([]string, 0),
-		hashPreferences: make([]string, 0),
-		hashes:          make(map[string]func() hash.Hash, 0),
-		opts:            opts,
+		registration:     r,
+		registrationOpts: make([]webhook.Option, 0),
+		logger:           zap.NewNop(),
+		client:           http.DefaultClient,
+		getAuth:          func() (string, error) { return "", nil },
+		shutdown:         make(chan struct{}),
+		update:           make(chan struct{}, 1),
+		metrics:          new(Measure).init(),
+		acceptedSecrets:  make([]string, 0),
+		hashPreferences:  make([]string, 0),
+		hashes:           make(map[string]func() hash.Hash, 0),
+		opts:             opts,
 	}
 
 	for _, opt := range opts {
@@ -87,6 +89,7 @@ func New(r *webhook.Registration, opts ...Option) (*Listener, error) {
 	if l.interval != 0 {
 		vOpts = append(vOpts, webhook.NoUntil())
 	}
+	vOpts = append(vOpts, l.registrationOpts...)
 
 	err := l.registration.Validate(vOpts...)
 	if err != nil {
