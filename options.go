@@ -337,21 +337,21 @@ func (h hashOption) String() string {
 // WebhookOpts is an option that provides the webhook.Options to apply
 // during the validation of the registration of the webhook.
 func WebhookOpts(opts ...webhook.Option) Option {
-	return &registrationOptsOption{
+	return &webhookOptsOption{
 		opts: opts,
 	}
 }
 
-type registrationOptsOption struct {
+type webhookOptsOption struct {
 	opts []webhook.Option
 }
 
-func (r registrationOptsOption) apply(lis *Listener) error {
+func (r webhookOptsOption) apply(lis *Listener) error {
 	lis.registrationOpts = append(lis.registrationOpts, r.opts...)
 	return nil
 }
 
-func (r registrationOptsOption) String() string {
+func (r webhookOptsOption) String() string {
 	buf := strings.Builder{}
 
 	buf.WriteString("RegistrationOpts(")
