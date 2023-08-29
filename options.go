@@ -4,6 +4,7 @@
 package listener
 
 import (
+	"context"
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"encoding/base64"
@@ -362,4 +363,26 @@ func (r registrationOptsOption) String() string {
 	}
 	buf.WriteString(")")
 	return buf.String()
+}
+
+// Context is an option that provides the context to use for the webhook
+// listener registration to use.  A nil value will cause the default context
+// to be used.
+func Context(ctx context.Context) Option {
+	return &contextOption{
+		ctx: ctx,
+	}
+}
+
+type contextOption struct {
+	ctx context.Context
+}
+
+func (c contextOption) apply(lis *Listener) error {
+	lis.upstreamCtx = c.ctx
+	return nil
+}
+
+func (c contextOption) String() string {
+	return "Context(ctx)"
 }

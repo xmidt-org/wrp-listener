@@ -4,6 +4,7 @@
 package listener
 
 import (
+	"context"
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"net/http"
@@ -84,6 +85,9 @@ func TestOptionStrings(t *testing.T) {
 		}, {
 			in:       RegistrationOpts(webhook.AtLeastOneEvent(), webhook.DeviceIDRegexMustCompile()),
 			expected: "RegistrationOpts(AtLeastOneEvent(), DeviceIDRegexMustCompile())",
+		}, {
+			in:       Context(context.Background()),
+			expected: "Context(ctx)",
 		},
 	}
 
@@ -351,6 +355,31 @@ func TestRegistrationOpts(t *testing.T) {
 			},
 			opt:         RegistrationOpts(webhook.DeviceIDRegexMustCompile()),
 			expectedErr: ErrInput,
+		},
+	}
+	commonNewTest(t, tests)
+}
+
+func TestContext(t *testing.T) {
+	ctx := context.WithValue(context.Background(), struct{}{}, struct{}{})
+
+	tests := []newTest{
+		{
+			description: "assert no ctx works",
+			r:           validWHR,
+			check: func(assert *assert.Assertions, l *Listener) {
+				assert.NotEqual(ctx, l.ctx)
+				assert.NotEqual(ctx, l.upstreamCtx)
+			},
+		},
+		{
+			description: "assert Context() works",
+			r:           validWHR,
+			opt:         Context(ctx),
+			check: func(assert *assert.Assertions, l *Listener) {
+				assert.NotEqual(ctx, l.ctx)
+				assert.Equal(ctx, l.upstreamCtx)
+			},
 		},
 	}
 	commonNewTest(t, tests)

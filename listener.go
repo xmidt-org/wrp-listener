@@ -5,6 +5,7 @@ package listener
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"encoding/hex"
 	"encoding/json"
@@ -35,10 +36,10 @@ type Listener struct {
 	registrationOpts []webhook.Option
 	interval         time.Duration
 	client           *http.Client
-	shutdown         chan struct{}
+	ctx              context.Context
+	upstreamCtx      context.Context
+	shutdown         context.CancelFunc
 	update           chan struct{}
-	running          bool
-	wg               sync.WaitGroup
 	getAuth          func() (string, error)
 	logger           *zap.Logger
 	metrics          *Measure
@@ -63,8 +64,9 @@ func New(r *webhook.Registration, opts ...Option) (*Listener, error) {
 		logger:           zap.NewNop(),
 		client:           http.DefaultClient,
 		getAuth:          func() (string, error) { return "", nil },
-		shutdown:         make(chan struct{}),
-		update:           make(chan struct{}, 1),
+		upstreamCtx:      context.Background(),
+		ctx:              context.Background(),
+		shutdown:         func() {},
 		metrics:          new(Measure).init(),
 		acceptedSecrets:  make([]string, 0),
 		hashPreferences:  make([]string, 0),
@@ -108,7 +110,7 @@ func (l *Listener) Register() error {
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	if l.running {
+	if l.update != nil {
 		return nil
 	}
 
@@ -116,9 +118,9 @@ func (l *Listener) Register() error {
 		return l.register(true)
 	}
 
-	l.wg.Add(1)
+	l.update = make(chan struct{}, 1)
+	l.ctx, l.shutdown = context.WithCancel(l.upstreamCtx)
 	go l.run()
-	l.running = true
 
 	return nil
 }
@@ -126,19 +128,7 @@ func (l *Listener) Register() error {
 // Stop stops the webhook listener.  If the listener is not running, this is a
 // no-op.
 func (l *Listener) Stop() {
-	l.m.Lock()
-
-	if !l.running {
-		l.m.Unlock()
-		return
-	}
-
-	close(l.shutdown)
-	l.running = false
-
-	l.m.Unlock()
-
-	l.wg.Wait()
+	l.shutdown()
 }
 
 // Use sets the secret to use for the webhook registration.  If the listener is
@@ -159,7 +149,7 @@ func (l *Listener) use(secret string) error {
 		return multierr.Combine(err, fmt.Errorf("%w: unable to marshal the registration", ErrInput))
 	}
 
-	if l.running {
+	if l.update != nil {
 		l.update <- struct{}{}
 	}
 
@@ -182,22 +172,23 @@ func (l *Listener) Accept(secrets []string) {
 func (l *Listener) run() {
 	ticker := time.NewTicker(l.interval)
 	defer ticker.Stop()
-	defer l.wg.Done()
 
 	l.metrics.RegistrationInterval.Set(l.interval.Seconds())
 
 	for {
+		if err := l.register(false); err != nil {
+			l.logger.Error("failed to register webhook", zap.Error(err))
+		}
+
 		select {
-		case <-l.shutdown:
+		case <-l.ctx.Done():
+			l.m.Lock()
+			l.update = nil
+			l.m.Unlock()
 			return
+
 		case <-ticker.C:
-			if err := l.register(false); err != nil {
-				l.logger.Error("failed to register webhook", zap.Error(err))
-			}
 		case <-l.update:
-			if err := l.register(false); err != nil {
-				l.logger.Error("failed to register webhook", zap.Error(err))
-			}
 		}
 	}
 }
