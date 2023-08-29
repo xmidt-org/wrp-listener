@@ -103,12 +103,21 @@ func New(r *webhook.Registration, opts ...Option) (*Listener, error) {
 	return &l, nil
 }
 
-// Register registers the webhook listener.  If the interval is greater than 0
-// the registrations will continue until Stop() is called.  If the listener is
-// already running, this is a nop.
-func (l *Listener) Register() error {
+// Register registers the webhook listener using the optional specified secret.
+// If the interval is greater than 0 the registrations will continue until
+// Stop() is called or the parent context is canceled.  If the listener is
+// already running, the secret will be updated immediately.
+// If the secret is not provided, the current secret will be used.  Only the
+// first secret will be used if multiple secrets are provided.
+func (l *Listener) Register(secret ...string) error {
 	l.m.Lock()
 	defer l.m.Unlock()
+
+	if len(secret) != 0 {
+		if err := l.use(secret[0]); err != nil {
+			return err
+		}
+	}
 
 	if l.update != nil {
 		return nil
@@ -129,15 +138,6 @@ func (l *Listener) Register() error {
 // no-op.
 func (l *Listener) Stop() {
 	l.shutdown()
-}
-
-// Use sets the secret to use for the webhook registration.  If the listener is
-// running, the registration will be updated immediately.
-func (l *Listener) Use(secret string) error {
-	l.m.Lock()
-	defer l.m.Unlock()
-
-	return l.use(secret)
 }
 
 func (l *Listener) use(secret string) error {
