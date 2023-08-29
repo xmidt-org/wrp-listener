@@ -238,47 +238,44 @@ func (a authFuncOption) String() string {
 	return a.text
 }
 
-// Secret is an option that provides the secret to use for the webhook
-// listener registration to use.  A nil value will cause no secret to be used.
-func Secret(secret string) Option {
-	return &secretFuncOption{
-		text:   "Secret(***)",
-		secret: []string{secret},
-	}
-}
-
-func Secrets(secrets ...string) Option {
-	return &secretFuncOption{
-		text:   "Secrets(***, ...)",
+// AcceptedSecrets is an option that provides the list of secrets accepted
+// by the webhook listener when validating the callback event.  A valid
+// hash (or multiple) must be provided as well.
+func AcceptedSecrets(secrets ...string) Option {
+	return &acceptedSecretsOption{
 		secret: secrets,
 	}
 }
 
-type secretFuncOption struct {
-	text   string
+type acceptedSecretsOption struct {
 	secret []string
 }
 
-func (s secretFuncOption) apply(lis *Listener) error {
+func (s acceptedSecretsOption) apply(lis *Listener) error {
 	lis.acceptedSecrets = append(lis.acceptedSecrets, s.secret...)
 	return nil
 }
 
-func (s secretFuncOption) String() string {
-	return s.text
+func (s acceptedSecretsOption) String() string {
+	if len(s.secret) == 1 {
+		return "AcceptedSecrets(***)"
+	}
+	return "AcceptedSecrets(***, ...)"
 }
 
-// AcceptNone enables the use of the sha1 hash for the webhook listener
-// validation to use.
-func AcceptNone() Option {
+// AcceptNoHash enables the use of no hash for the webhook listener
+// callback validation.
+//
+// USE WITH CAUTION.
+func AcceptNoHash() Option {
 	return &hashOption{
-		text: "AcceptNone()",
+		text: "AcceptNoHash()",
 		name: "none",
 	}
 }
 
 // AcceptSHA1 enables the use of the sha1 hash for the webhook listener
-// validation to use.
+// callback validation.
 func AcceptSHA1() Option {
 	return &hashOption{
 		text: "AcceptSHA1()",
@@ -288,7 +285,7 @@ func AcceptSHA1() Option {
 }
 
 // AcceptSHA256 enables the use of the sha256 hash for the webhook listener
-// validation to use.
+// callback validation.
 func AcceptSHA256() Option {
 	return &hashOption{
 		text: "AcceptSHA256()",
@@ -298,7 +295,7 @@ func AcceptSHA256() Option {
 }
 
 // AcceptCustom is an option that sets the hash to use for the webhook
-// listener validation to use.  A nil value will cause no hash to be used.
+// callback validation to use.  A nil hash is not accepted.
 func AcceptCustom(name string, h func() hash.Hash) Option {
 	if h == nil {
 		return &hashOption{

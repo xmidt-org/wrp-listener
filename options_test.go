@@ -65,14 +65,14 @@ func TestOptionStrings(t *testing.T) {
 			in:       AuthBearerFunc(nil),
 			expected: "AuthBearerFunc(nil)",
 		}, {
-			in:       Secret("foo"),
-			expected: "Secret(***)",
+			in:       AcceptedSecrets("foo"),
+			expected: "AcceptedSecrets(***)",
 		}, {
-			in:       Secrets("foo", "bar"),
-			expected: "Secrets(***, ...)",
+			in:       AcceptedSecrets("foo", "bar"),
+			expected: "AcceptedSecrets(***, ...)",
 		}, {
-			in:       AcceptNone(),
-			expected: "AcceptNone()",
+			in:       AcceptNoHash(),
+			expected: "AcceptNoHash()",
 		}, {
 			in:       AcceptSHA1(),
 			expected: "AcceptSHA1()",
@@ -264,22 +264,22 @@ func TestSecrets(t *testing.T) {
 			r:           validWHR,
 			check:       vadorAcceptedSecrets(),
 		}, {
-			description: "assert Secret() works",
+			description: "assert AcceptedSecrets() works",
 			r:           validWHR,
-			opt:         Secret("foo"),
+			opt:         AcceptedSecrets("foo"),
 			check:       vadorAcceptedSecrets("foo"),
 		}, {
-			description: "assert Secrets() works",
+			description: "assert AcceptedSecrets() works",
 			r:           validWHR,
-			opt:         Secrets("foo", "bar"),
+			opt:         AcceptedSecrets("foo", "bar"),
 			check:       vadorAcceptedSecrets("foo", "bar"),
 		}, {
-			description: "assert multiple Secret(), Secrets() works",
+			description: "assert multiple AcceptedSecrets() works",
 			r:           validWHR,
 			opts: []Option{
-				Secret("foo"),
-				Secrets("car", "cat"),
-				Secret("bar"),
+				AcceptedSecrets("foo"),
+				AcceptedSecrets("car", "cat"),
+				AcceptedSecrets("bar"),
 			},
 			check: vadorAcceptedSecrets("foo", "car", "cat", "bar"),
 		},
@@ -298,7 +298,7 @@ func TestHashes(t *testing.T) {
 		}, {
 			description: "assert none works",
 			r:           validWHR,
-			opt:         AcceptNone(),
+			opt:         AcceptNoHash(),
 			check: func(assert *assert.Assertions, l *Listener) {
 				assert.Nil(l.hashes["none"])
 			},

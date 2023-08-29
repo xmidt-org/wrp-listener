@@ -159,7 +159,7 @@ func TestTokenize(t *testing.T) {
 			},
 			opts: []Option{
 				AcceptSHA1(),
-				AcceptNone(),
+				AcceptNoHash(),
 			},
 			expected: Token{
 				alg:       "sha1",
@@ -167,7 +167,7 @@ func TestTokenize(t *testing.T) {
 			},
 		}, {
 			description: "no header with that name",
-			opt:         AcceptNone(),
+			opt:         AcceptNoHash(),
 			expected: Token{
 				alg:       "none",
 				principal: "",
@@ -179,7 +179,7 @@ func TestTokenize(t *testing.T) {
 					webpaHeader: []string{"   "},
 				},
 			},
-			opt: AcceptNone(),
+			opt: AcceptNoHash(),
 			expected: Token{
 				alg:       "none",
 				principal: "",
@@ -275,7 +275,7 @@ func TestAuthorize(t *testing.T) {
 			},
 			opts: []Option{
 				AcceptSHA1(),
-				Secret("123456"),
+				AcceptedSecrets("123456"),
 			},
 			token: Token{
 				alg:       "sha1",
@@ -288,7 +288,7 @@ func TestAuthorize(t *testing.T) {
 			},
 			opts: []Option{
 				AcceptSHA1(),
-				Secret("123456"),
+				AcceptedSecrets("123456"),
 			},
 			token: Token{
 				alg:       "sha1",
@@ -302,14 +302,14 @@ func TestAuthorize(t *testing.T) {
 			},
 			opts: []Option{
 				AcceptSHA1(),
-				Secret("123456"),
+				AcceptedSecrets("123456"),
 			},
 			expectedErr: ErrInput,
 		}, {
 			description: "no body",
 			opts: []Option{
 				AcceptSHA1(),
-				Secret("123456"),
+				AcceptedSecrets("123456"),
 			},
 			expectedErr: ErrInput,
 		}, {
@@ -374,7 +374,7 @@ func TestListener_Accept(t *testing.T) {
 			secrets:     []string{"foo"},
 		}, {
 			description:  "simple test",
-			opt:          Secret("bar"),
+			opt:          AcceptedSecrets("bar"),
 			expectBefore: []string{"bar"},
 			secrets:      []string{"foo"},
 		},
@@ -413,12 +413,12 @@ func TestListener_String(t *testing.T) {
 			str:         "Listener()",
 		}, {
 			description: "simple test",
-			opt:         Secret("bar"),
-			str:         "Listener(Secret(***))",
+			opt:         AcceptedSecrets("bar"),
+			str:         "Listener(AcceptedSecrets(***))",
 		}, {
 			description: "simple test",
-			opts:        []Option{Secret("bar"), AcceptSHA1()},
-			str:         "Listener(Secret(***), AcceptSHA1())",
+			opts:        []Option{AcceptedSecrets("bar"), AcceptSHA1()},
+			str:         "Listener(AcceptedSecrets(***), AcceptSHA1())",
 		},
 	}
 	for _, tc := range tests {
