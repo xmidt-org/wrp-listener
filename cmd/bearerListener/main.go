@@ -21,15 +21,16 @@ type eventListener struct {
 }
 
 func (el *eventListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Got a request")
 	token, err := el.l.Tokenize(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Println("Got a request, but it was not authorized.")
 		return
 	}
 
 	err = el.l.Authorize(r, token)
 	if err != nil {
+		fmt.Println("Got a request, but it was not authorized.")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -37,6 +38,7 @@ func (el *eventListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	r.Body.Close()
 	if err != nil {
+		fmt.Println("Got a request, but it had no body.")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -52,6 +54,8 @@ func main() {
 	localAddress := strings.TrimSpace(os.Getenv("WEBHOOK_LISTEN_ADDR"))
 	certFile := strings.TrimSpace(os.Getenv("WEBHOOK_LISTEN_CERT_FILE"))
 	keyFile := strings.TrimSpace(os.Getenv("WEBHOOK_LISTEN_KEY_FILE"))
+	contentType := strings.TrimSpace(os.Getenv("WEBHOOK_CONTENT_TYPE"))
+	events := strings.TrimSpace(os.Getenv("WEBHOOK_EVENTS"))
 
 	useTLS := false
 	if certFile != "" && keyFile != "" {
@@ -63,17 +67,16 @@ func main() {
 	fmt.Println("WEBHOOK_LISTEN_ADDR     : ", localAddress)
 	fmt.Println("WEBHOOK_LISTEN_CERT_FILE: ", certFile)
 	fmt.Println("WEBHOOK_LISTEN_KEY_FILE : ", keyFile)
+	fmt.Println("WEBHOOK_CONTENT_TYPE    : ", contentType)
 	fmt.Printf("                 use TLS: %t\n", useTLS)
 
 	// Create the listener.
 	r := webhook.Registration{
 		Config: webhook.DeliveryConfig{
 			ReceiverURL: receiverURL,
-			ContentType: "application/json",
+			ContentType: contentType,
 		},
-		Events: []string{
-			"device-status:*",
-		},
+		Events:   []string{events},
 		Duration: webhook.CustomDuration(5 * time.Minute),
 	}
 
@@ -120,7 +123,7 @@ func main() {
 
 	// Register for webhook events, using the secret "foobar" as the shared
 	// secret.
-	err = whl.Register("foobar")
+	err = whl.Register(sharedSecrets[0])
 	if err != nil {
 		panic(err)
 	}
