@@ -139,7 +139,7 @@ func ExampleBearerAuth() { // nolint: govet
 	}
 
 	go func() {
-		err := http.ListenAndServe(":8080", &el) // nolint: gosec
+		err := http.ListenAndServe(":8081", &el) // nolint: gosec
 		if err != nil {
 			panic(err)
 		}

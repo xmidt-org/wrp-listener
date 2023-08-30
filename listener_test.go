@@ -410,7 +410,7 @@ func TestListener_Accept(t *testing.T) {
 			description: "simple test",
 			secrets:     []string{"foo"},
 		}, {
-			description:  "simple test",
+			description:  "simple test accepting secrets",
 			opt:          AcceptedSecrets("bar"),
 			expectBefore: []string{"bar"},
 			secrets:      []string{"foo"},
@@ -447,15 +447,15 @@ func TestListener_String(t *testing.T) {
 	}{
 		{
 			description: "simple test",
-			str:         "Listener()",
+			str:         "Listener(URL(http://example.com))",
 		}, {
 			description: "simple test",
 			opt:         AcceptedSecrets("bar"),
-			str:         "Listener(AcceptedSecrets(***))",
+			str:         "Listener(URL(http://example.com), AcceptedSecrets(***))",
 		}, {
 			description: "simple test",
 			opts:        []Option{AcceptedSecrets("bar"), AcceptSHA1()},
-			str:         "Listener(AcceptedSecrets(***), AcceptSHA1())",
+			str:         "Listener(URL(http://example.com), AcceptedSecrets(***), AcceptSHA1())",
 		},
 	}
 	for _, tc := range tests {
