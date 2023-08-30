@@ -208,6 +208,9 @@ type MeasureAuthorization struct {
 	// Valid is the label used when the authorization is valid.
 	Valid string `default:"success"`
 
+	// InvalidToken is the label used when the token is nil or invalid.
+	InvalidToken string `default:"failure_invalid_token"`
+
 	// InvalidSignature is the label used when the signature is invalid.
 	InvalidSignature string `default:"failure_invalid_signature"`
 
@@ -223,6 +226,10 @@ type MeasureAuthorization struct {
 	// Counter is the counter used to count the number of times the authorization
 	// has been attempted and the resulting outcome.
 	Counter metrics.Counter `default:"discard.NewCounter()"`
+}
+
+func (m *MeasureAuthorization) incInvalidToken() {
+	m.Counter.With(m.Label, m.InvalidToken).Add(1)
 }
 
 func (m *MeasureAuthorization) incInvalidSignature() {

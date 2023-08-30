@@ -38,11 +38,11 @@ func ExampleBasicAuth() { // nolint: govet
 
 	// Create the listener.
 	r := webhook.Registration{
-		Address:  server.URL, // Replace this with a real address.
 		Duration: webhook.CustomDuration(5 * time.Minute),
 	}
 
-	whl, err := listener.New(&r,
+	url := server.URL // replace with the URL of the webhook provider
+	whl, err := listener.New(&r, url,
 		listener.AuthBasic("username", "password"),
 		listener.AcceptSHA1(),
 		listener.AcceptedSecrets("foobar", "carport"),

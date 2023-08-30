@@ -53,6 +53,7 @@ func TestMeasure_init(t *testing.T) {
 				Authorization: MeasureAuthorization{
 					Label:             "outcome",
 					Valid:             "success",
+					InvalidToken:      "failure_invalid_token",
 					InvalidSignature:  "failure_invalid_signature",
 					EmptyBody:         "failure_empty_body",
 					UnableToReadBody:  "failure_unable_to_read_body",

@@ -33,6 +33,7 @@ const (
 type Listener struct {
 	m                sync.RWMutex
 	registration     *webhook.Registration
+	webhookURL       string
 	registrationOpts []webhook.Option
 	interval         time.Duration
 	client           *http.Client
@@ -57,9 +58,19 @@ type Option interface {
 }
 
 // New creates a new webhook listener with the given registration and options.
-func New(r *webhook.Registration, opts ...Option) (*Listener, error) {
+func New(r *webhook.Registration, url string, opts ...Option) (*Listener, error) {
+	if r == nil {
+		return nil, fmt.Errorf("%w: registration is required", ErrInput)
+	}
+
+	url = strings.TrimSpace(url)
+	if url == "" {
+		return nil, fmt.Errorf("%w: webhook url is required", ErrInput)
+	}
+
 	l := Listener{
 		registration:     r,
+		webhookURL:       url,
 		registrationOpts: make([]webhook.Option, 0),
 		logger:           zap.NewNop(),
 		client:           http.DefaultClient,
@@ -150,7 +161,14 @@ func (l *Listener) use(secret string) error {
 	}
 
 	if l.update != nil {
-		l.update <- struct{}{}
+		go func() {
+			defer func() {
+				// If the update channel is closed, the listener is shutting down.
+				// Ignore the panic.
+				_ = recover()
+			}()
+			l.update <- struct{}{}
+		}()
 	}
 
 	return nil
@@ -183,6 +201,7 @@ func (l *Listener) run() {
 		select {
 		case <-l.ctx.Done():
 			l.m.Lock()
+			close(l.update)
 			l.update = nil
 			l.m.Unlock()
 			return
@@ -224,7 +243,7 @@ func (l *Listener) register(locked bool) error {
 	}
 
 	fn := l.getAuth
-	address := l.registration.Address
+	address := l.webhookURL
 	body := l.body
 
 	if !locked {
@@ -273,7 +292,7 @@ func (l *Listener) register(locked bool) error {
 
 // Tokenize parses the token from the request header.  If the token is not found
 // or is invalid, an error is returned.
-func (l *Listener) Tokenize(r *http.Request) (*Token, error) {
+func (l *Listener) Tokenize(r *http.Request) (*token, error) {
 	headers := r.Header.Values(xmidtHeader)
 	if len(headers) != 0 {
 		l.metrics.TokenHeaderUsed.inc(xmidtHeader)
@@ -325,12 +344,17 @@ func (l *Listener) Tokenize(r *http.Request) (*Token, error) {
 	l.metrics.TokenAlgorithmUsed.inc(best)
 	l.metrics.TokenOutcome.incValid()
 
-	return NewToken(best, choices[best]), nil
+	return newToken(best, choices[best]), nil
 }
 
 // Authorize validates that the request body matches the hash and secret provided
 // in the token.
 func (l *Listener) Authorize(r *http.Request, t Token) error {
+	if t == nil {
+		l.metrics.Authorization.incInvalidToken()
+		return fmt.Errorf("%w: invalid token", ErrInput)
+	}
+
 	secret, err := hex.DecodeString(t.Principal())
 	if err != nil {
 		l.metrics.Authorization.incInvalidSignature()

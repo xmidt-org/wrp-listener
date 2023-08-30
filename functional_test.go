@@ -56,16 +56,17 @@ func TestNormalUsage(t *testing.T) {
 	defer server.Close()
 
 	// Create the listener.
-	whl, err := New(&webhook.Registration{
-		Address: server.URL,
-		Events: []string{
-			"foo",
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		Config: webhook.DeliveryConfig{
-			Secret: "secret1",
-		},
-		Duration: webhook.CustomDuration(5 * time.Minute),
-	},
+		server.URL,
 		Interval(1*time.Millisecond),
 		AuthBasic("user", "pass"),
 	)
@@ -148,16 +149,17 @@ func TestSingleShotUsage(t *testing.T) {
 	defer server.Close()
 
 	// Create the listener.
-	whl, err := New(&webhook.Registration{
-		Address: server.URL,
-		Events: []string{
-			"foo",
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		Config: webhook.DeliveryConfig{
-			Secret: "secret1",
-		},
-		Duration: webhook.CustomDuration(5 * time.Minute),
-	},
+		server.URL,
 		Once(),
 	)
 	require.NotNil(whl)
@@ -172,7 +174,7 @@ func TestSingleShotUsage(t *testing.T) {
 	assert.NoError(err)
 
 	// Wait a bit then roll the secret..
-	time.Sleep(time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	m.Lock()
 	expectSecret = append(expectSecret, "secret2", "secret3", "secret4")
 	m.Unlock()
@@ -187,13 +189,13 @@ func TestSingleShotUsage(t *testing.T) {
 	assert.NoError(err)
 
 	// Wait a bit then remove the prior secret from the list of accepted secrets.
-	time.Sleep(time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	m.Lock()
 	expectSecret = []string{"secret5"}
 	m.Unlock()
 
 	// Wait a bit then unregister.
-	time.Sleep(time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	whl.Stop()
 
 	// Re-stop because it could happen.
@@ -214,16 +216,17 @@ func TestFailedHTTPCall(t *testing.T) {
 	defer server.Close()
 
 	// Create the listener.
-	whl, err := New(&webhook.Registration{
-		Address: server.URL,
-		Events: []string{
-			"foo",
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		Config: webhook.DeliveryConfig{
-			Secret: "secret1",
-		},
-		Duration: webhook.CustomDuration(5 * time.Minute),
-	},
+		server.URL,
 		Once(),
 	)
 
@@ -240,15 +243,17 @@ func TestFailedAuthCheck(t *testing.T) {
 	require := require.New(t)
 
 	// Create the listener.
-	whl, err := New(&webhook.Registration{
-		Events: []string{
-			"foo",
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		Config: webhook.DeliveryConfig{
-			Secret: "secret1",
-		},
-		Duration: webhook.CustomDuration(5 * time.Minute),
-	},
+		"http://example.com",
 		AuthBearerFunc(func() (string, error) {
 			return "", fmt.Errorf("nope")
 		}),
@@ -267,16 +272,18 @@ func TestFailedNewRequest(t *testing.T) {
 	require := require.New(t)
 
 	// Create the listener.
-	whl, err := New(&webhook.Registration{
-		Address: "//invalid::localhost/:99999",
-		Events: []string{
-			"foo",
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		Config: webhook.DeliveryConfig{
-			Secret: "secret1",
-		},
-		Duration: webhook.CustomDuration(5 * time.Minute),
-	})
+		"//invalid::localhost/:99999",
+	)
 
 	require.NotNil(whl)
 	require.NoError(err)
@@ -300,16 +307,17 @@ func TestFailedConnect(t *testing.T) {
 	defer server.Close()
 
 	// Create the listener.
-	whl, err := New(&webhook.Registration{
-		Address: server.URL,
-		Events: []string{
-			"foo",
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		Config: webhook.DeliveryConfig{
-			Secret: "secret1",
-		},
-		Duration: webhook.CustomDuration(5 * time.Minute),
-	},
+		server.URL,
 		HTTPClient(&http.Client{Timeout: 1 * time.Millisecond}),
 		Once(),
 	)
@@ -320,4 +328,58 @@ func TestFailedConnect(t *testing.T) {
 	// Register the webhook.
 	err = whl.Register()
 	assert.ErrorIs(err, ErrRegistrationFailed)
+}
+
+func TestFailsAfterABit(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	var m sync.Mutex
+	var count int
+
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				_, _ = io.ReadAll(r.Body)
+				r.Body.Close()
+
+				m.Lock()
+				if count == 0 {
+					w.WriteHeader(http.StatusOK)
+				} else {
+					w.WriteHeader(http.StatusBadRequest)
+				}
+				count++
+				m.Unlock()
+			},
+		),
+	)
+	defer server.Close()
+
+	// Create the listener.
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
+		},
+		server.URL,
+		Interval(1*time.Millisecond),
+		AuthBasic("user", "pass"),
+	)
+	require.NotNil(whl)
+	require.NoError(err)
+
+	// Register the webhook before has started
+	err = whl.Register()
+	assert.NoError(err)
+
+	// Wait a bit then roll the secret..
+	time.Sleep(10 * time.Millisecond)
+
+	whl.Stop()
 }

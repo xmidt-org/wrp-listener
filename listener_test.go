@@ -18,13 +18,15 @@ import (
 type vador func(*assert.Assertions, *Listener)
 
 type newTest struct {
-	description string
-	r           webhook.Registration
-	opt         Option
-	opts        []Option
-	check       vador
-	checks      []vador
-	expectedErr error
+	description    string
+	r              webhook.Registration
+	noRegistration bool
+	noUrl          bool
+	opt            Option
+	opts           []Option
+	check          vador
+	checks         []vador
+	expectedErr    error
 }
 
 func vadorBody(assert *assert.Assertions, l *Listener) {
@@ -63,6 +65,15 @@ func TestNew(t *testing.T) {
 			description: "empty is not ok",
 			expectedErr: ErrInput,
 		}, {
+			description: "no url fails",
+			r:           validWHR,
+			noUrl:       true,
+			expectedErr: ErrInput,
+		}, {
+			description:    "nil registration fails",
+			noRegistration: true,
+			expectedErr:    ErrInput,
+		}, {
 			description: "nearly empty is ok",
 			r:           validWHR,
 			checks: []vador{
@@ -92,18 +103,30 @@ func commonNewTest(t *testing.T, tests []newTest) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
+			require := require.New(t)
 
 			r := tc.r
 			opts := make([]Option, 0, len(tc.opts)+1)
 			opts = append(opts, tc.opt)
 			opts = append(opts, tc.opts...)
-			got, err := New(&r, opts...)
+			url := "http://example.com"
+			if tc.noUrl {
+				url = ""
+			}
+			rPtr := &r
+			if tc.noRegistration {
+				rPtr = nil
+			}
+			got, err := New(rPtr, url, opts...)
 
 			if tc.expectedErr != nil {
 				assert.Nil(got)
 				assert.ErrorIs(err, tc.expectedErr)
 				return
 			}
+
+			require.NotNil(got)
+			require.NoError(err)
 
 			checks := make([]vador, 0, len(tc.checks)+1)
 			checks = append(checks, tc.check)
@@ -134,7 +157,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			opt: AcceptSHA1(),
-			expected: Token{
+			expected: token{
 				alg:       "sha1",
 				principal: "12345",
 			},
@@ -146,7 +169,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			opt: AcceptSHA1(),
-			expected: Token{
+			expected: token{
 				alg:       "sha1",
 				principal: "12345",
 			},
@@ -161,14 +184,14 @@ func TestTokenize(t *testing.T) {
 				AcceptSHA1(),
 				AcceptNoHash(),
 			},
-			expected: Token{
+			expected: token{
 				alg:       "sha1",
 				principal: "12345",
 			},
 		}, {
 			description: "no header with that name",
 			opt:         AcceptNoHash(),
-			expected: Token{
+			expected: token{
 				alg:       "none",
 				principal: "",
 			},
@@ -180,7 +203,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			opt: AcceptNoHash(),
-			expected: Token{
+			expected: token{
 				alg:       "none",
 				principal: "",
 			},
@@ -236,6 +259,7 @@ func TestTokenize(t *testing.T) {
 			whl, err := New(&webhook.Registration{
 				Duration: webhook.CustomDuration(5 * time.Minute),
 			},
+				"http://example.com",
 				opts...,
 			)
 
@@ -277,7 +301,7 @@ func TestAuthorize(t *testing.T) {
 				AcceptSHA1(),
 				AcceptedSecrets("123456"),
 			},
-			token: Token{
+			token: token{
 				alg:       "sha1",
 				principal: "f76a55b14b2b3bd08116b4ee857dd6439b507317",
 			},
@@ -290,7 +314,7 @@ func TestAuthorize(t *testing.T) {
 				AcceptSHA1(),
 				AcceptedSecrets("123456"),
 			},
-			token: Token{
+			token: token{
 				alg:       "sha1",
 				principal: "0000",
 			},
@@ -305,6 +329,10 @@ func TestAuthorize(t *testing.T) {
 				AcceptedSecrets("123456"),
 			},
 			expectedErr: ErrInput,
+			token: token{
+				alg:       "sha1",
+				principal: "0000",
+			},
 		}, {
 			description: "no body",
 			opts: []Option{
@@ -312,19 +340,26 @@ func TestAuthorize(t *testing.T) {
 				AcceptedSecrets("123456"),
 			},
 			expectedErr: ErrInput,
+			token: token{
+				alg:       "sha1",
+				principal: "0000",
+			},
 		}, {
 			description: "invalid principle",
-			token: Token{
+			token: token{
 				alg:       "sha1",
 				principal: "f", // invalid because it needs to be 2 characters.
 			},
+			expectedErr: ErrInput,
+		}, {
+			description: "nil token",
 			expectedErr: ErrInput,
 		}, {
 			description: "no matching hash",
 			input: http.Request{
 				Body: io.NopCloser(strings.NewReader("foo")),
 			},
-			token: Token{
+			token: token{
 				alg:       "sha1",
 				principal: "f0",
 			},
@@ -338,9 +373,11 @@ func TestAuthorize(t *testing.T) {
 			require := require.New(t)
 
 			opts := append(tc.opts, tc.opt)
-			whl, err := New(&webhook.Registration{
-				Duration: webhook.CustomDuration(5 * time.Minute),
-			},
+			whl, err := New(
+				&webhook.Registration{
+					Duration: webhook.CustomDuration(5 * time.Minute),
+				},
+				"http://example.com",
 				opts...,
 			)
 
@@ -386,7 +423,7 @@ func TestListener_Accept(t *testing.T) {
 
 			r := validWHR
 			opts := append(tc.opts, tc.opt)
-			l, err := New(&r, opts...)
+			l, err := New(&r, "http://example.com", opts...)
 			require.NotNil(l)
 			require.NoError(err)
 
@@ -428,7 +465,7 @@ func TestListener_String(t *testing.T) {
 
 			r := validWHR
 			opts := append(tc.opts, tc.opt)
-			l, err := New(&r, opts...)
+			l, err := New(&r, "http://example.com", opts...)
 			require.NotNil(l)
 			require.NoError(err)
 
