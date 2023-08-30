@@ -218,14 +218,16 @@ func (l *Listener) String() string {
 	buf := strings.Builder{}
 
 	buf.WriteString("Listener(")
-	comma := ""
+	buf.WriteString("URL(")
+	buf.WriteString(l.webhookURL)
+	buf.WriteString(")")
+
 	for _, opt := range l.opts {
 		if opt == nil {
 			continue
 		}
-		buf.WriteString(comma)
+		buf.WriteString(", ")
 		buf.WriteString(opt.String())
-		comma = ", "
 	}
 	buf.WriteString(")")
 

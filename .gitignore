@@ -31,3 +31,5 @@ examples/timedListener/timedListener
 
 go.work
 go.work.sum
+
+cmd/bearerListener/bearerListener
