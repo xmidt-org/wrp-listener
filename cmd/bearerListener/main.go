@@ -77,7 +77,7 @@ func main() {
 			ContentType: contentType,
 		},
 		Events:   []string{events},
-		Duration: webhook.CustomDuration(5 * time.Minute),
+		Duration: webhook.CustomDuration(15 * time.Second),
 	}
 
 	sharedSecrets := strings.Split(os.Getenv("WEBHOOK_SHARED_SECRETS"), ",")
