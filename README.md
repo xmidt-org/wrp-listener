@@ -7,15 +7,14 @@ function to be used for authentication.
 [![codecov.io](http://codecov.io/github/xmidt-org/wrp-listener/coverage.svg?branch=main)](http://codecov.io/github/xmidt-org/wrp-listener?branch=main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-listener)](https://goreportcard.com/report/github.com/xmidt-org/wrp-listener)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-listener/blob/main/LICENSE)
-[![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-listener.svg)](CHANGELOG.md)
+[![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-listener.svg)](https://github.com/xmidt-org/wrp-listener/releases)
 [![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-listener)](https://pkg.go.dev/github.com/xmidt-org/wrp-listener)
 
 ## Summary
 
 Wrp-listener provides packages to help a consumer register to a webhook and 
 authenticate messages received.  Registering to a webhook can be done directly 
-or set up to run at an interval.  Message authentication is set up to work with 
-the [bascule](https://github.com/xmidt-org/bascule) library.
+or set up to run at an interval.
 
 ## Table of Contents
 
@@ -30,21 +29,55 @@ By participating, you agree to this Code.
 
 ## Details
 
-### Authentication
+The below code snippet gets you registered to the webhook and events flowing to you.
 
-Authentication is done using the bascule library: the token factory provided 
-in the `hashTokenFactory` package can be given to the bascule Constructor 
-middleware in order to verify that the hashed body given with a request is 
-valid and created with the expected secret.
+```golang
+	r := webhook.Registration{
+		Config: webhook.DeliveryConfig{
+			ReceiverURL: receiverURL,
+			ContentType: contentType,
+		},
+		Events:   []string{events},
+		Duration: webhook.CustomDuration(5 * time.Minute),
+	}
 
-### Registering
+	l, _ := listener.New(&r, "https://example.com",
+		listener.AuthBearer(os.Getenv("WEBHOOK_BEARER_TOKEN")),
+		listener.AcceptSHA1(),
+		listener.Logger(logger),
+		listener.Interval(1 * time.Minute),
+		listener.AcceptedSecrets(sharedSecrets...),
+    
+    _ = l.Register(sharedSecrets[0])
+```
 
-Registration happens through the `webhookClient` package, and can be set up for 
-manual registration or registration at an interval.  If the consumer of this 
-package decides when to register, an error is returned if registering a webhook 
-is not successful.  With registering at an interval, a logger can be provided.  
-Then, if an error occurs, the registerer will log it and then try again at the 
-next interval.
+Authorization is also pretty simple.
+
+```golang
+func (el *eventListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	token, err := el.l.Tokenize(r)
+    if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	err = el.l.Authorize(r, token)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// ... do more stuff ...
+
+	w.WriteHeader(http.StatusOK)
+}
+```
+
+The example found in [cmd/bearerListener/main.go](https://github.com/xmidt-org/wrp-listener/blob/main/cmd/bearerListener/main.go) is a working command line example that shows how to use the library from end to end.
+
+Additional examples can be found in the `example_test.go` file.
+
+Functional tests are found in `functional_test.go`
 
 ## Contributing
 
