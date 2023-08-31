@@ -12,20 +12,9 @@ function to be used for authentication.
 
 ## Summary
 
-Wrp-listener provides packages to help a consumer register to a webhook and 
+`wrp-listener`` provides a package to help a consumer register to a webhook and 
 authenticate messages received.  Registering to a webhook can be done directly 
 or set up to run at an interval.
-
-## Table of Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [Details](#details)
-- [Contributing](#contributing)
-
-## Code of Conduct
-
-This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
-By participating, you agree to this Code.
 
 ## Details
 
@@ -73,11 +62,16 @@ func (el *eventListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-The example found in [cmd/bearerListener/main.go](https://github.com/xmidt-org/wrp-listener/blob/main/cmd/bearerListener/main.go) is a working command line example that shows how to use the library from end to end.
+The full example found in [cmd/bearerListener/main.go](https://github.com/xmidt-org/wrp-listener/blob/main/cmd/bearerListener/main.go) is a working command line example that shows how to use the library from end to end.
 
 Additional examples can be found in the `example_test.go` file.
 
 Functional tests are found in `functional_test.go`
+
+## Code of Conduct
+
+This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
+By participating, you agree to this Code.
 
 ## Contributing
 
