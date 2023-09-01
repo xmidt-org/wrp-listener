@@ -25,9 +25,8 @@ var (
 	// is not in the list of accepted hashes.
 	ErrNotAcceptedHash = errors.New("not accepted hash")
 
-	// ErrAuthFetchFailed is returned when the auth fetch fails and returns an
-	// error.
-	ErrAuthFetchFailed = errors.New("auth fetch failed")
+	// ErrDecoratorFailed is returned when the decorator returns an error.
+	ErrDecoratorFailed = errors.New("decorator failed")
 
 	// ErrNewRequestFailed is returned when the request cannot be created.
 	ErrNewRequestFailed = errors.New("new request failed")

@@ -42,7 +42,7 @@ type Listener struct {
 	shutdown              context.CancelFunc
 	running               bool
 	update                chan struct{}
-	getAuth               func() (string, error)
+	reqDecorators         []Decorator
 	registrationListeners listeners
 	authorizeListeners    listeners
 	tokenizeListeners     listeners
@@ -75,7 +75,7 @@ func New(r *webhook.Registration, url string, opts ...Option) (*Listener, error)
 		webhookURL:       url,
 		registrationOpts: make([]webhook.Option, 0),
 		client:           http.DefaultClient,
-		getAuth:          func() (string, error) { return "", nil },
+		reqDecorators:    make([]Decorator, 0),
 		upstreamCtx:      context.Background(),
 		ctx:              context.Background(),
 		shutdown:         func() {},
@@ -293,7 +293,6 @@ func (l *Listener) register(locked bool) error {
 		l.m.RLock()
 	}
 
-	fn := l.getAuth
 	address := l.webhookURL
 	body := l.body
 
@@ -303,22 +302,21 @@ func (l *Listener) register(locked bool) error {
 
 	var event EventRegistration
 
-	auth, err := fn()
-	if err != nil {
-		event.Err = multierr.Combine(err, ErrAuthFetchFailed, ErrRegistrationNotAttempted)
-		return l.dispatch(event)
-	}
-
 	req, err := http.NewRequest(http.MethodPost, address, bytes.NewReader(body))
 	if err != nil {
 		event.Err = multierr.Combine(err, ErrNewRequestFailed, ErrRegistrationNotAttempted)
 		return l.dispatch(event)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	if auth != "" {
-		req.Header.Set("Authorization", auth)
+	for _, decorator := range l.reqDecorators {
+		err := decorator.Decorate(req)
+		if err != nil {
+			event.Err = multierr.Combine(err, ErrDecoratorFailed, ErrRegistrationNotAttempted)
+			return l.dispatch(event)
+		}
 	}
+
+	req.Header.Set("Content-Type", "application/json")
 
 	event.At = time.Now()
 	resp, err := l.client.Do(req)

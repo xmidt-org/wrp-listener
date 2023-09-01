@@ -33,23 +33,11 @@ func TestOptionStrings(t *testing.T) {
 			in:       HTTPClient(nil),
 			expected: "HTTPClient(nil)",
 		}, {
-			in:       AuthBasic("user", "pass"),
-			expected: "AuthBasic(user, ***)",
+			in:       DecorateRequest(nil),
+			expected: "DecorateRequest(nil)",
 		}, {
-			in:       AuthBasicFunc(func() (string, string, error) { return "", "", nil }),
-			expected: "AuthBasicFunc(fn)",
-		}, {
-			in:       AuthBasicFunc(nil),
-			expected: "AuthBasicFunc(nil)",
-		}, {
-			in:       AuthBearer("secret_token"),
-			expected: "AuthBearer(***)",
-		}, {
-			in:       AuthBearerFunc(func() (string, error) { return "", nil }),
-			expected: "AuthBearerFunc(fn)",
-		}, {
-			in:       AuthBearerFunc(nil),
-			expected: "AuthBearerFunc(nil)",
+			in:       DecorateRequest(DecoratorFunc(func(*http.Request) error { return nil })),
+			expected: "DecorateRequest(DecoratorFunc(fn))",
 		}, {
 			in:       AcceptedSecrets("foo"),
 			expected: "AcceptedSecrets(***)",
@@ -108,65 +96,6 @@ func TestHTTPClient(t *testing.T) {
 			check: func(assert *assert.Assertions, l *Listener) {
 				assert.Equal(l.client, http.DefaultClient)
 			},
-		},
-	}
-	commonNewTest(t, tests)
-}
-
-func TestAuth(t *testing.T) {
-	tests := []newTest{
-		{
-			description: "assert default auth is empty",
-			r:           validWHR,
-			check:       vadorGetAuth(""),
-		}, {
-			description: "assert AuthBasic works",
-			r:           validWHR,
-			opt:         AuthBasic("user", "pass"),
-			check:       vadorGetAuth("Basic dXNlcjpwYXNz"),
-		}, {
-			description: "assert AuthBasicFunc works",
-			r:           validWHR,
-			opt: AuthBasicFunc(func() (string, string, error) {
-				return "user", "pass", nil
-			}),
-			check: vadorGetAuth("Basic dXNlcjpwYXNz"),
-		}, {
-			description: "assert AuthBasicFunc handles failure",
-			r:           validWHR,
-			opt: AuthBasicFunc(func() (string, string, error) {
-				return "", "", ErrInput
-			}),
-			check: vadorGetAuth("", ErrInput),
-		}, {
-			description: "assert AuthBasicFunc(nil) works",
-			r:           validWHR,
-			opt:         AuthBasicFunc(nil),
-			check:       vadorGetAuth(""),
-		}, {
-			description: "assert AuthBearer works",
-			r:           validWHR,
-			opt:         AuthBearer("token"),
-			check:       vadorGetAuth("Bearer token"),
-		}, {
-			description: "assert AuthBearerFunc works",
-			r:           validWHR,
-			opt: AuthBearerFunc(func() (string, error) {
-				return "token", nil
-			}),
-			check: vadorGetAuth("Bearer token"),
-		}, {
-			description: "assert AuthBearerFunc(nil) works",
-			r:           validWHR,
-			opt:         AuthBearerFunc(nil),
-			check:       vadorGetAuth(""),
-		}, {
-			description: "assert AuthBearerFunc handles failure",
-			r:           validWHR,
-			opt: AuthBearerFunc(func() (string, error) {
-				return "", ErrInput
-			}),
-			check: vadorGetAuth("", ErrInput),
 		},
 	}
 	commonNewTest(t, tests)
