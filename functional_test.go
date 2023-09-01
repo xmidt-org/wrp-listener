@@ -132,13 +132,13 @@ func TestSingleShotUsage(t *testing.T) {
 
 				found := false
 				m.Lock()
-				defer m.Unlock()
 				for _, s := range expectSecret {
 					if s == reg.Config.Secret {
 						found = true
 						break
 					}
 				}
+				m.Unlock()
 
 				assert.True(found)
 
@@ -147,6 +147,15 @@ func TestSingleShotUsage(t *testing.T) {
 		),
 	)
 	defer server.Close()
+
+	eventListener := testListener{
+		re: func(e EventRegistration) {
+			assert.Equal(http.StatusOK, e.StatusCode)
+			assert.NotZero(e.At)
+			assert.NotZero(e.Duration)
+			assert.NoError(e.Err)
+		},
+	}
 
 	// Create the listener.
 	whl, err := New(
@@ -164,6 +173,9 @@ func TestSingleShotUsage(t *testing.T) {
 	)
 	require.NotNil(whl)
 	require.NoError(err)
+
+	cancel := whl.AddRegistrationEventListener(&eventListener)
+	assert.NotNil(cancel)
 
 	// Register the webhook.
 	err = whl.Register()
@@ -215,6 +227,15 @@ func TestFailedHTTPCall(t *testing.T) {
 	)
 	defer server.Close()
 
+	eventListener := testListener{
+		re: func(e EventRegistration) {
+			assert.Equal(http.StatusBadRequest, e.StatusCode)
+			assert.NotZero(e.At)
+			assert.NotZero(e.Duration)
+			assert.ErrorIs(e.Err, ErrRegistrationFailed)
+		},
+	}
+
 	// Create the listener.
 	whl, err := New(
 		&webhook.Registration{
@@ -230,6 +251,8 @@ func TestFailedHTTPCall(t *testing.T) {
 		Once(),
 	)
 
+	_ = whl.AddRegistrationEventListener(&eventListener)
+
 	require.NotNil(whl)
 	require.NoError(err)
 
@@ -241,6 +264,16 @@ func TestFailedHTTPCall(t *testing.T) {
 func TestFailedAuthCheck(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
+
+	eventListener := testListener{
+		re: func(e EventRegistration) {
+			assert.Zero(e.StatusCode)
+			assert.Zero(e.At)
+			assert.Zero(e.Duration)
+			assert.ErrorIs(e.Err, ErrRegistrationNotAttempted)
+			assert.ErrorIs(e.Err, ErrAuthFetchFailed)
+		},
+	}
 
 	// Create the listener.
 	whl, err := New(
@@ -262,6 +295,9 @@ func TestFailedAuthCheck(t *testing.T) {
 	require.NotNil(whl)
 	require.NoError(err)
 
+	cancel := whl.AddRegistrationEventListener(&eventListener)
+	assert.NotNil(cancel)
+
 	// Register the webhook.
 	err = whl.Register()
 	assert.ErrorIs(err, ErrRegistrationNotAttempted)
@@ -270,6 +306,16 @@ func TestFailedAuthCheck(t *testing.T) {
 func TestFailedNewRequest(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
+
+	eventListener := testListener{
+		re: func(e EventRegistration) {
+			assert.Zero(e.StatusCode)
+			assert.Zero(e.At)
+			assert.Zero(e.Duration)
+			assert.ErrorIs(e.Err, ErrRegistrationNotAttempted)
+			assert.ErrorIs(e.Err, ErrNewRequestFailed)
+		},
+	}
 
 	// Create the listener.
 	whl, err := New(
@@ -287,6 +333,45 @@ func TestFailedNewRequest(t *testing.T) {
 
 	require.NotNil(whl)
 	require.NoError(err)
+
+	cancel := whl.AddRegistrationEventListener(&eventListener)
+	assert.NotNil(cancel)
+
+	// Register the webhook.
+	err = whl.Register()
+	assert.ErrorIs(err, ErrRegistrationNotAttempted)
+}
+
+func TestCancelListener(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	eventListener := testListener{
+		re: func(e EventRegistration) {
+			assert.Fail("should not have been called")
+		},
+	}
+
+	// Create the listener.
+	whl, err := New(
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
+		},
+		"//invalid::localhost/:99999",
+	)
+
+	require.NotNil(whl)
+	require.NoError(err)
+
+	cancel := whl.AddRegistrationEventListener(&eventListener)
+	assert.NotNil(cancel)
+	cancel()
 
 	// Register the webhook.
 	err = whl.Register()
@@ -306,6 +391,15 @@ func TestFailedConnect(t *testing.T) {
 	)
 	defer server.Close()
 
+	eventListener := testListener{
+		re: func(e EventRegistration) {
+			assert.Zero(e.StatusCode)
+			assert.NotZero(e.At)
+			assert.NotZero(e.Duration)
+			assert.ErrorIs(e.Err, ErrRegistrationFailed)
+		},
+	}
+
 	// Create the listener.
 	whl, err := New(
 		&webhook.Registration{
@@ -324,6 +418,9 @@ func TestFailedConnect(t *testing.T) {
 
 	require.NotNil(whl)
 	require.NoError(err)
+
+	cancel := whl.AddRegistrationEventListener(&eventListener)
+	assert.NotNil(cancel)
 
 	// Register the webhook.
 	err = whl.Register()
@@ -356,6 +453,19 @@ func TestFailsAfterABit(t *testing.T) {
 	)
 	defer server.Close()
 
+	eventListener := testListener{
+		re: func(e EventRegistration) {
+			assert.NotZero(e.StatusCode)
+			assert.NotZero(e.At)
+			assert.NotZero(e.Duration)
+			if e.StatusCode == http.StatusOK {
+				assert.NoError(e.Err)
+				return
+			}
+			assert.ErrorIs(e.Err, ErrRegistrationFailed)
+		},
+	}
+
 	// Create the listener.
 	whl, err := New(
 		&webhook.Registration{
@@ -373,6 +483,9 @@ func TestFailsAfterABit(t *testing.T) {
 	)
 	require.NotNil(whl)
 	require.NoError(err)
+
+	cancel := whl.AddRegistrationEventListener(&eventListener)
+	assert.NotNil(cancel)
 
 	// Register the webhook before has started
 	err = whl.Register()

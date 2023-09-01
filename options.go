@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/xmidt-org/webhook-schema"
-	"go.uber.org/zap"
 )
 
 // Interval is an option that sets the interval to wait between webhook
@@ -53,66 +52,6 @@ func (i intervalOption) apply(l *Listener) error {
 
 func (i intervalOption) String() string {
 	return i.text
-}
-
-// Logger is an option that sets the logger to use for the webhook listener.
-// The default is to use a no-op logger.
-func Logger(l *zap.Logger) Option {
-	return &loggerOption{
-		logger: l,
-	}
-}
-
-type loggerOption struct {
-	logger *zap.Logger
-}
-
-func (l loggerOption) apply(lis *Listener) error {
-	logger := l.logger
-	if logger == nil {
-		logger = zap.NewNop()
-	}
-
-	lis.logger = logger
-	return nil
-}
-
-func (l loggerOption) String() string {
-	if l.logger != nil {
-		return "Logger(zap)"
-	}
-	return "Logger(nil)"
-}
-
-// Metrics is an option that provides the metrics to use for the webhook listener.
-// The default is to not use metrics.  Any metrics that are not provided will be
-// replaced with a no-op metric.  If a nil value is provided, then a no-op
-// metric will be used.
-func Metrics(m *Measure) Option {
-	m.init()
-	return &metricsOption{
-		metrics: m,
-	}
-}
-
-type metricsOption struct {
-	metrics *Measure
-}
-
-func (m metricsOption) apply(lis *Listener) error {
-	metrics := m.metrics
-	if m.metrics == nil {
-		metrics = new(Measure).init()
-	}
-	lis.metrics = metrics
-	return nil
-}
-
-func (m metricsOption) String() string {
-	if m.metrics != nil {
-		return "Metrics(metrics)"
-	}
-	return "Metrics(nil)"
 }
 
 // HTTPClient is an option that provides the http client to use for the

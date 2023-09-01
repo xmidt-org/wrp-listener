@@ -12,9 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/xmidt-org/webhook-schema"
-	"go.uber.org/zap"
 )
 
 func TestOptionStrings(t *testing.T) {
@@ -28,18 +26,6 @@ func TestOptionStrings(t *testing.T) {
 		}, {
 			in:       Once(),
 			expected: "Once()",
-		}, {
-			in:       Logger(zap.NewNop()),
-			expected: "Logger(zap)",
-		}, {
-			in:       Logger(nil),
-			expected: "Logger(nil)",
-		}, {
-			in:       Metrics(new(Measure)),
-			expected: "Metrics(metrics)",
-		}, {
-			in:       Metrics(nil),
-			expected: "Metrics(nil)",
 		}, {
 			in:       HTTPClient(http.DefaultClient),
 			expected: "HTTPClient(client)",
@@ -96,77 +82,6 @@ func TestOptionStrings(t *testing.T) {
 			assert.Equal(t, tc.expected, tc.in.String())
 		})
 	}
-}
-
-func TestLogger(t *testing.T) {
-	logger, err := zap.NewProduction()
-	require.NoError(t, err)
-
-	tests := []newTest{
-		{
-			description: "assert default logger is there",
-			r:           validWHR,
-			check: func(assert *assert.Assertions, l *Listener) {
-				assert.NotNil(l.logger)
-			},
-		}, {
-			description: "assert specified logger is there",
-			r:           validWHR,
-			opt:         Logger(logger),
-			check: func(assert *assert.Assertions, l *Listener) {
-				assert.Equal(l.logger, logger)
-			},
-		}, {
-			description: "assert nil logger is there",
-			r:           validWHR,
-			opts:        []Option{Logger(logger), Logger(nil)},
-			check: func(assert *assert.Assertions, l *Listener) {
-				assert.NotEqual(l.logger, logger)
-			},
-		}, {
-			description: "nearly empty with an invalid interval",
-			opt:         Interval(-5 * time.Minute),
-			expectedErr: ErrInput,
-		},
-	}
-	commonNewTest(t, tests)
-}
-
-func TestMetrics(t *testing.T) {
-	metrics := Measure{
-		Registration: MeasureRegistration{
-			Label: "label",
-		},
-	}
-
-	tests := []newTest{
-		{
-			description: "assert default metrics is there",
-			r:           validWHR,
-			check: func(assert *assert.Assertions, l *Listener) {
-				tmp := new(Measure).init()
-				assert.Equal(l.metrics, tmp)
-			},
-		}, {
-			description: "assert new metrics are used",
-			r:           validWHR,
-			opt:         Metrics(&metrics),
-			check: func(assert *assert.Assertions, l *Listener) {
-				tmp := metrics
-				tmp.init()
-				assert.Equal(l.metrics, &tmp)
-			},
-		}, {
-			description: "assert nil metrics works",
-			r:           validWHR,
-			opts:        []Option{Metrics(&metrics), Metrics(nil)},
-			check: func(assert *assert.Assertions, l *Listener) {
-				tmp := new(Measure).init()
-				assert.Equal(l.metrics, tmp)
-			},
-		},
-	}
-	commonNewTest(t, tests)
 }
 
 func TestHTTPClient(t *testing.T) {

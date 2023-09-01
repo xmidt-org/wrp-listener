@@ -13,7 +13,6 @@ import (
 
 	"github.com/xmidt-org/webhook-schema"
 	listener "github.com/xmidt-org/wrp-listener"
-	"go.uber.org/zap"
 )
 
 type eventListener struct {
@@ -85,15 +84,9 @@ func main() {
 		sharedSecrets[i] = strings.TrimSpace(sharedSecrets[i])
 	}
 
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
-
 	whl, err := listener.New(&r, webhookURL,
 		listener.AuthBearer(os.Getenv("WEBHOOK_BEARER_TOKEN")),
 		listener.AcceptSHA1(),
-		listener.Logger(logger),
 		listener.Once(),
 		listener.AcceptedSecrets(sharedSecrets...),
 	)

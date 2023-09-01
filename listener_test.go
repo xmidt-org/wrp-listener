@@ -57,6 +57,30 @@ var validWHR = webhook.Registration{
 	Duration: webhook.CustomDuration(5 * time.Minute),
 }
 
+type testListener struct {
+	re func(EventRegistration)
+	te func(TokenizeEvent)
+	ae func(AuthorizeEvent)
+}
+
+func (tl *testListener) OnRegistrationEvent(e EventRegistration) {
+	if tl.re != nil {
+		tl.re(e)
+	}
+}
+
+func (tl *testListener) OnTokenizeEvent(e TokenizeEvent) {
+	if tl.te != nil {
+		tl.te(e)
+	}
+}
+
+func (tl *testListener) OnAuthorizeEvent(e AuthorizeEvent) {
+	if tl.ae != nil {
+		tl.ae(e)
+	}
+}
+
 // TestNew is focused on validating the input to New and not all the forms of
 // options.
 func TestNew(t *testing.T) {
@@ -148,6 +172,7 @@ func TestTokenize(t *testing.T) {
 		opts        []Option
 		expected    Token
 		expectedErr error
+		event       *TokenizeEvent
 	}{
 		{
 			description: "basic test",
@@ -161,6 +186,11 @@ func TestTokenize(t *testing.T) {
 				alg:       "sha1",
 				principal: "12345",
 			},
+			event: &TokenizeEvent{
+				Header:     webpaHeader,
+				Algorithms: []string{"none", "sha1"},
+				Algorithm:  "sha1",
+			},
 		}, {
 			description: "basic test, using the alternate header",
 			input: http.Request{
@@ -172,6 +202,11 @@ func TestTokenize(t *testing.T) {
 			expected: token{
 				alg:       "sha1",
 				principal: "12345",
+			},
+			event: &TokenizeEvent{
+				Header:     xmidtHeader,
+				Algorithms: []string{"none", "sha1"},
+				Algorithm:  "sha1",
 			},
 		}, {
 			description: "multiple auth possible, choose the best",
@@ -188,12 +223,21 @@ func TestTokenize(t *testing.T) {
 				alg:       "sha1",
 				principal: "12345",
 			},
+			event: &TokenizeEvent{
+				Header:     webpaHeader,
+				Algorithms: []string{"none", "sha1"},
+				Algorithm:  "sha1",
+			},
 		}, {
 			description: "no header with that name",
 			opt:         AcceptNoHash(),
 			expected: token{
 				alg:       "none",
 				principal: "",
+			},
+			event: &TokenizeEvent{
+				Algorithms: []string{"none"},
+				Algorithm:  "none",
 			},
 		}, {
 			description: "empty header",
@@ -207,6 +251,11 @@ func TestTokenize(t *testing.T) {
 				alg:       "none",
 				principal: "",
 			},
+			event: &TokenizeEvent{
+				Header:     webpaHeader,
+				Algorithms: []string{"none"},
+				Algorithm:  "none",
+			},
 		}, {
 			description: "malformed header",
 			input: http.Request{
@@ -214,7 +263,11 @@ func TestTokenize(t *testing.T) {
 					webpaHeader: []string{"foo=="},
 				},
 			},
-			expectedErr: ErrInvalidAuth,
+			expectedErr: ErrInvalidTokenHeader,
+			event: &TokenizeEvent{
+				Header: webpaHeader,
+				Err:    ErrInvalidHeaderFormat,
+			},
 		}, {
 			description: "malformed header 2",
 			input: http.Request{
@@ -222,7 +275,11 @@ func TestTokenize(t *testing.T) {
 					webpaHeader: []string{"foo"},
 				},
 			},
-			expectedErr: ErrInvalidAuth,
+			expectedErr: ErrInvalidTokenHeader,
+			event: &TokenizeEvent{
+				Header: webpaHeader,
+				Err:    ErrInvalidHeaderFormat,
+			},
 		}, {
 			description: "empty value",
 			input: http.Request{
@@ -230,7 +287,11 @@ func TestTokenize(t *testing.T) {
 					webpaHeader: []string{"foo=  "},
 				},
 			},
-			expectedErr: ErrInvalidAuth,
+			expectedErr: ErrInvalidTokenHeader,
+			event: &TokenizeEvent{
+				Header: webpaHeader,
+				Err:    ErrInvalidHeaderFormat,
+			},
 		}, {
 			description: "empty key",
 			input: http.Request{
@@ -238,7 +299,11 @@ func TestTokenize(t *testing.T) {
 					webpaHeader: []string{"=foo"},
 				},
 			},
-			expectedErr: ErrInvalidAuth,
+			expectedErr: ErrInvalidTokenHeader,
+			event: &TokenizeEvent{
+				Header: webpaHeader,
+				Err:    ErrInvalidHeaderFormat,
+			},
 		}, {
 			description: "no matching key",
 			input: http.Request{
@@ -246,7 +311,12 @@ func TestTokenize(t *testing.T) {
 					webpaHeader: []string{"sha256=12345"},
 				},
 			},
-			expectedErr: ErrNotAcceptedHash,
+			expectedErr: ErrAlgorithmNotFound,
+			event: &TokenizeEvent{
+				Header:     webpaHeader,
+				Algorithms: []string{"none", "sha256"},
+				Err:        ErrAlgorithmNotFound,
+			},
 		},
 	}
 
@@ -265,6 +335,20 @@ func TestTokenize(t *testing.T) {
 
 			require.NotNil(whl)
 			require.NoError(err)
+
+			if tc.event != nil {
+				tl := &testListener{
+					te: func(e TokenizeEvent) {
+						assert.Equal(tc.event.Header, e.Header)
+						assert.Equal(tc.event.Algorithms, e.Algorithms)
+						assert.Equal(tc.event.Algorithm, e.Algorithm)
+						assert.ErrorIs(e.Err, tc.event.Err)
+					},
+				}
+
+				got := whl.AddTokenizeEventListener(tl)
+				require.NotNil(got)
+			}
 
 			in := tc.input
 			got, err := whl.Tokenize(&in)
@@ -291,6 +375,7 @@ func TestAuthorize(t *testing.T) {
 		opt         Option
 		opts        []Option
 		expectedErr error
+		event       *AuthorizeEvent
 	}{
 		{
 			description: "basic test",
@@ -305,6 +390,9 @@ func TestAuthorize(t *testing.T) {
 				alg:       "sha1",
 				principal: "f76a55b14b2b3bd08116b4ee857dd6439b507317",
 			},
+			event: &AuthorizeEvent{
+				Algorithm: "sha1",
+			},
 		}, {
 			description: "basic test, signature does not match",
 			input: http.Request{
@@ -318,9 +406,13 @@ func TestAuthorize(t *testing.T) {
 				alg:       "sha1",
 				principal: "0000",
 			},
-			expectedErr: ErrInput,
+			event: &AuthorizeEvent{
+				Algorithm: "sha1",
+				Err:       ErrInvalidSignature,
+			},
+			expectedErr: ErrInvalidSignature,
 		}, {
-			description: "empty body",
+			description: "empty body is ok",
 			input: http.Request{
 				Body: io.NopCloser(strings.NewReader("")),
 			},
@@ -328,21 +420,25 @@ func TestAuthorize(t *testing.T) {
 				AcceptSHA1(),
 				AcceptedSecrets("123456"),
 			},
-			expectedErr: ErrInput,
 			token: token{
 				alg:       "sha1",
-				principal: "0000",
+				principal: "823688dafca7393d24c871a2da98a84d8732e927",
+			},
+			event: &AuthorizeEvent{
+				Algorithm: "sha1",
 			},
 		}, {
-			description: "no body",
+			description: "no body, is ok",
 			opts: []Option{
 				AcceptSHA1(),
 				AcceptedSecrets("123456"),
 			},
-			expectedErr: ErrInput,
 			token: token{
 				alg:       "sha1",
-				principal: "0000",
+				principal: "823688dafca7393d24c871a2da98a84d8732e927",
+			},
+			event: &AuthorizeEvent{
+				Algorithm: "sha1",
 			},
 		}, {
 			description: "invalid principle",
@@ -350,10 +446,13 @@ func TestAuthorize(t *testing.T) {
 				alg:       "sha1",
 				principal: "f", // invalid because it needs to be 2 characters.
 			},
-			expectedErr: ErrInput,
+			expectedErr: ErrInvalidSignature,
+			event: &AuthorizeEvent{
+				Err: ErrInvalidSignature,
+			},
 		}, {
 			description: "nil token",
-			expectedErr: ErrInput,
+			expectedErr: ErrNoToken,
 		}, {
 			description: "no matching hash",
 			input: http.Request{
@@ -364,6 +463,10 @@ func TestAuthorize(t *testing.T) {
 				principal: "f0",
 			},
 			expectedErr: ErrNotAcceptedHash,
+			event: &AuthorizeEvent{
+				Algorithm: "sha1",
+				Err:       ErrNotAcceptedHash,
+			},
 		},
 	}
 
@@ -380,6 +483,18 @@ func TestAuthorize(t *testing.T) {
 				"http://example.com",
 				opts...,
 			)
+
+			if tc.event != nil {
+				tl := &testListener{
+					ae: func(e AuthorizeEvent) {
+						assert.Equal(tc.event.Algorithm, e.Algorithm)
+						assert.ErrorIs(e.Err, tc.event.Err)
+					},
+				}
+
+				got := whl.AddAuthorizeEventListener(tl)
+				require.NotNil(got)
+			}
 
 			require.NotNil(whl)
 			require.NoError(err)
@@ -472,4 +587,9 @@ func TestListener_String(t *testing.T) {
 			assert.Equal(tc.str, l.String())
 		})
 	}
+}
+
+func TestDispatch(t *testing.T) {
+	l := &Listener{}
+	assert.Panics(t, func() { _ = l.dispatch(t) })
 }
