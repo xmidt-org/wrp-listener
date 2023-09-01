@@ -19,7 +19,6 @@ import (
 
 	"github.com/xmidt-org/webhook-schema"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -31,24 +30,26 @@ const (
 // It can be configured to register the webhook at a given interval, as well as
 // it can also be configured to accept multiple secrets and hash algorithms.
 type Listener struct {
-	m                sync.RWMutex
-	registration     *webhook.Registration
-	webhookURL       string
-	registrationOpts []webhook.Option
-	interval         time.Duration
-	client           *http.Client
-	ctx              context.Context
-	upstreamCtx      context.Context
-	shutdown         context.CancelFunc
-	update           chan struct{}
-	getAuth          func() (string, error)
-	logger           *zap.Logger
-	metrics          *Measure
-	opts             []Option
-	body             []byte
-	acceptedSecrets  []string
-	hashPreferences  []string
-	hashes           map[string]func() hash.Hash
+	m                     sync.RWMutex
+	wg                    sync.WaitGroup
+	registration          *webhook.Registration
+	webhookURL            string
+	registrationOpts      []webhook.Option
+	interval              time.Duration
+	client                *http.Client
+	ctx                   context.Context
+	upstreamCtx           context.Context
+	shutdown              context.CancelFunc
+	update                chan struct{}
+	getAuth               func() (string, error)
+	registrationListeners listeners
+	authorizeListeners    listeners
+	tokenizeListeners     listeners
+	opts                  []Option
+	body                  []byte
+	acceptedSecrets       []string
+	hashPreferences       []string
+	hashes                map[string]func() hash.Hash
 }
 
 // Option is an interface that is used to configure the webhook listener.
@@ -72,13 +73,11 @@ func New(r *webhook.Registration, url string, opts ...Option) (*Listener, error)
 		registration:     r,
 		webhookURL:       url,
 		registrationOpts: make([]webhook.Option, 0),
-		logger:           zap.NewNop(),
 		client:           http.DefaultClient,
 		getAuth:          func() (string, error) { return "", nil },
 		upstreamCtx:      context.Background(),
 		ctx:              context.Background(),
 		shutdown:         func() {},
-		metrics:          new(Measure).init(),
 		acceptedSecrets:  make([]string, 0),
 		hashPreferences:  make([]string, 0),
 		hashes:           make(map[string]func() hash.Hash, 0),
@@ -112,6 +111,51 @@ func New(r *webhook.Registration, url string, opts ...Option) (*Listener, error)
 	l.use(l.registration.Config.Secret)
 
 	return &l, nil
+}
+
+// AddRegistrationEventListener adds an event listener to the webhook listener.
+// The listener will be called for each event that occurs.  The returned
+// function can be called to remove the listener.
+func (l *Listener) AddRegistrationEventListener(listener RegistrationEventListener) CancelEventListenerFunc {
+	return l.registrationListeners.addListener(listener)
+}
+
+// AddTokenizeEventListener adds an event listener to the webhook listener.
+// The listener will be called for each event that occurs.  The returned
+// function can be called to remove the listener.
+func (l *Listener) AddTokenizeEventListener(listener TokenizeEventListener) CancelEventListenerFunc {
+	return l.tokenizeListeners.addListener(listener)
+}
+
+// AddAuthorizeEventListener adds an event listener to the webhook listener.
+// The listener will be called for each event that occurs.  The returned
+// function can be called to remove the listener.
+func (l *Listener) AddAuthorizeEventListener(listener AuthorizeEventListener) CancelEventListenerFunc {
+	return l.authorizeListeners.addListener(listener)
+}
+
+// dispatch dispatches the event to the listeners and returns the error that
+// should be returned by the caller.
+func (l *Listener) dispatch(event any) error {
+	switch event := event.(type) {
+	case EventRegistration:
+		l.registrationListeners.visit(func(listener any) {
+			listener.(RegistrationEventListener).OnRegistrationEvent(event)
+		})
+		return event.Err
+	case TokenizeEvent:
+		l.tokenizeListeners.visit(func(listener any) {
+			listener.(TokenizeEventListener).OnTokenizeEvent(event)
+		})
+		return event.Err
+	case AuthorizeEvent:
+		l.authorizeListeners.visit(func(listener any) {
+			listener.(AuthorizeEventListener).OnAuthorizeEvent(event)
+		})
+		return event.Err
+	}
+
+	panic("unknown event type")
 }
 
 // Register registers the webhook listener using the optional specified secret.
@@ -149,6 +193,7 @@ func (l *Listener) Register(secret ...string) error {
 // no-op.
 func (l *Listener) Stop() {
 	l.shutdown()
+	l.wg.Wait()
 }
 
 func (l *Listener) use(secret string) error {
@@ -188,15 +233,14 @@ func (l *Listener) Accept(secrets []string) {
 // run is the main loop for the webhook listener.  It will register the webhook
 // at the given interval until Stop() is called.
 func (l *Listener) run() {
+	l.wg.Add(1)
+	defer l.wg.Done()
+
 	ticker := time.NewTicker(l.interval)
 	defer ticker.Stop()
 
-	l.metrics.RegistrationInterval.Set(l.interval.Seconds())
-
 	for {
-		if err := l.register(false); err != nil {
-			l.logger.Error("failed to register webhook", zap.Error(err))
-		}
+		_ = l.register(false)
 
 		select {
 		case <-l.ctx.Done():
@@ -252,16 +296,18 @@ func (l *Listener) register(locked bool) error {
 		l.m.RUnlock()
 	}
 
+	var event EventRegistration
+
 	auth, err := fn()
 	if err != nil {
-		l.metrics.Registration.incAuthFetchingFailure()
-		return multierr.Combine(err, fmt.Errorf("%w: unable to fetch auth", ErrRegistrationNotAttempted))
+		event.Err = multierr.Combine(err, ErrAuthFetchFailed, ErrRegistrationNotAttempted)
+		return l.dispatch(event)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, address, bytes.NewReader(body))
 	if err != nil {
-		l.metrics.Registration.incNewRequestFailure()
-		return multierr.Combine(err, fmt.Errorf("%w: unable to create a new http request", ErrRegistrationNotAttempted))
+		event.Err = multierr.Combine(err, ErrNewRequestFailed, ErrRegistrationNotAttempted)
+		return l.dispatch(event)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -269,42 +315,43 @@ func (l *Listener) register(locked bool) error {
 		req.Header.Set("Authorization", auth)
 	}
 
+	event.At = time.Now()
 	resp, err := l.client.Do(req)
+	event.Duration = time.Since(event.At)
+
 	if err != nil {
-		l.metrics.Registration.incRequestFailure()
-		return multierr.Combine(err, fmt.Errorf("%w: unable to make a http request", ErrRegistrationFailed))
+		event.Err = multierr.Combine(err, ErrRegistrationFailed)
+		return l.dispatch(event)
 	}
 	defer resp.Body.Close()
 
-	l.metrics.Registration.incStatusCode(resp.StatusCode)
+	event.StatusCode = resp.StatusCode
 
 	if resp.StatusCode == http.StatusOK {
-		return nil
+		return l.dispatch(event)
 	}
 
-	rBody, _ := io.ReadAll(resp.Body)
+	event.Body, _ = io.ReadAll(resp.Body)
+	event.Err = ErrRegistrationFailed
 
-	l.logger.Info("failed to register webhook",
-		zap.Int("StatusCode", resp.StatusCode),
-		zap.ByteString("body", rBody))
-
-	return fmt.Errorf("%w: http status code(%d) was not 200",
-		ErrRegistrationFailed, resp.StatusCode)
+	return l.dispatch(event)
 }
 
 // Tokenize parses the token from the request header.  If the token is not found
 // or is invalid, an error is returned.
 func (l *Listener) Tokenize(r *http.Request) (*token, error) {
+	event := TokenizeEvent{
+		Header: xmidtHeader,
+	}
+
 	headers := r.Header.Values(xmidtHeader)
-	if len(headers) != 0 {
-		l.metrics.TokenHeaderUsed.inc(xmidtHeader)
-	} else {
+	if len(headers) == 0 {
 		headers = r.Header.Values(webpaHeader)
-		l.metrics.TokenHeaderUsed.inc(webpaHeader)
+		event.Header = webpaHeader
 	}
 
 	if len(headers) == 0 {
-		l.metrics.TokenOutcome.incNoTokenHeader()
+		event.Header = ""
 	}
 
 	choices := map[string]string{
@@ -320,84 +367,79 @@ func (l *Listener) Tokenize(r *http.Request) (*token, error) {
 		}
 		parts := strings.Split(header, "=")
 		if len(parts) != 2 {
-			l.metrics.TokenOutcome.incInvalidHeaderFormat()
-			return nil, ErrInvalidAuth
+			event.Err = multierr.Combine(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
+			return nil, l.dispatch(event)
 		}
 
 		alg := strings.ToLower(strings.TrimSpace(parts[0]))
 		val := strings.TrimSpace(parts[1])
 		if alg == "" || val == "" {
-			l.metrics.TokenOutcome.incInvalidHeaderFormat()
-			return nil, ErrInvalidAuth
+			event.Err = multierr.Combine(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
+			return nil, l.dispatch(event)
 		}
 
 		choices[alg] = val
 		list = append(list, alg)
 	}
 
-	l.metrics.TokenAlgorithms.inc(list)
-
+	event.Algorithms = list
 	best, err := l.best(list)
 	if err != nil {
-		l.metrics.TokenOutcome.incAlgorithmNotFound()
-		return nil, err
+		event.Err = multierr.Combine(ErrInvalidTokenHeader, ErrAlgorithmNotFound)
+		return nil, l.dispatch(event)
 	}
 
-	l.metrics.TokenAlgorithmUsed.inc(best)
-	l.metrics.TokenOutcome.incValid()
-
+	event.Algorithm = best
+	l.dispatch(event)
 	return newToken(best, choices[best]), nil
 }
 
 // Authorize validates that the request body matches the hash and secret provided
 // in the token.
 func (l *Listener) Authorize(r *http.Request, t Token) error {
+	var event AuthorizeEvent
+
 	if t == nil {
-		l.metrics.Authorization.incInvalidToken()
-		return fmt.Errorf("%w: invalid token", ErrInput)
+		event.Err = ErrNoToken
+		return l.dispatch(event)
 	}
 
 	secret, err := hex.DecodeString(t.Principal())
 	if err != nil {
-		l.metrics.Authorization.incInvalidSignature()
-		return fmt.Errorf("%w: unable to decode signature", ErrInput)
+		event.Err = multierr.Combine(err, ErrInvalidSignature)
+		return l.dispatch(event)
 	}
 
-	if r.Body == nil {
-		l.metrics.Authorization.incEmptyBody()
-		return fmt.Errorf("%w: empty request body", ErrInput)
+	var msg []byte
+	if r.Body != nil {
+		msg, err = io.ReadAll(r.Body)
+		r.Body.Close()
+		if err != nil {
+			event.Err = multierr.Combine(err, ErrUnableToReadBody)
+			return l.dispatch(event)
+		}
+
+		// Reset the body so it can be read again later.
+		r.Body = io.NopCloser(bytes.NewReader(msg))
 	}
 
-	msg, err := io.ReadAll(r.Body)
-	r.Body.Close()
+	event.Algorithm = t.Type()
+	hashes, err := l.getHashes(event.Algorithm)
 	if err != nil {
-		l.metrics.Authorization.incUnableToReadBody()
-		return fmt.Errorf("%w: unable to read request body", ErrInput)
-	}
-
-	// Reset the body so it can be read again later.
-	r.Body = io.NopCloser(bytes.NewReader(msg))
-
-	if len(msg) == 0 {
-		l.metrics.Authorization.incEmptyBody()
-		return fmt.Errorf("%w: empty request body", ErrInput)
-	}
-
-	hashes, err := l.getHashes(t.Type())
-	if err != nil {
-		return err
+		event.Err = err
+		return l.dispatch(event)
 	}
 
 	for _, h := range hashes {
 		h.Write(msg)
 		if hmac.Equal(h.Sum(nil), secret) {
-			l.metrics.Authorization.incValid()
+			l.dispatch(event)
 			return nil
 		}
 	}
 
-	l.metrics.Authorization.incSignatureMismatch()
-	return fmt.Errorf("%w: unable to validate signature", ErrInput)
+	event.Err = ErrInvalidSignature
+	return l.dispatch(event)
 }
 
 // best returns the best secret to use for the given choices.  If none of the
