@@ -40,6 +40,7 @@ type Listener struct {
 	ctx                   context.Context
 	upstreamCtx           context.Context
 	shutdown              context.CancelFunc
+	running               bool
 	update                chan struct{}
 	getAuth               func() (string, error)
 	registrationListeners listeners
@@ -78,6 +79,7 @@ func New(r *webhook.Registration, url string, opts ...Option) (*Listener, error)
 		upstreamCtx:      context.Background(),
 		ctx:              context.Background(),
 		shutdown:         func() {},
+		update:           make(chan struct{}, 1),
 		acceptedSecrets:  make([]string, 0),
 		hashPreferences:  make([]string, 0),
 		hashes:           make(map[string]func() hash.Hash, 0),
@@ -174,7 +176,7 @@ func (l *Listener) Register(secret ...string) error {
 		}
 	}
 
-	if l.update != nil {
+	if l.running {
 		return nil
 	}
 
@@ -182,8 +184,8 @@ func (l *Listener) Register(secret ...string) error {
 		return l.register(true)
 	}
 
-	l.update = make(chan struct{}, 1)
 	l.ctx, l.shutdown = context.WithCancel(l.upstreamCtx)
+	l.running = true
 	go l.run()
 
 	return nil
@@ -192,6 +194,18 @@ func (l *Listener) Register(secret ...string) error {
 // Stop stops the webhook listener.  If the listener is not running, this is a
 // no-op.
 func (l *Listener) Stop() {
+	l.m.Lock()
+
+	if !l.running {
+		l.m.Unlock()
+		return
+	}
+	l.running = false
+	l.m.Unlock()
+
+	// Make sure not to hold the lock when closing because the goroutine might
+	// need the lock to exit out of what it's doing.
+
 	l.shutdown()
 	l.wg.Wait()
 }
@@ -205,15 +219,10 @@ func (l *Listener) use(secret string) error {
 		return multierr.Combine(err, fmt.Errorf("%w: unable to marshal the registration", ErrInput))
 	}
 
-	if l.update != nil {
-		go func() {
-			defer func() {
-				// If the update channel is closed, the listener is shutting down.
-				// Ignore the panic.
-				_ = recover()
-			}()
-			l.update <- struct{}{}
-		}()
+	// Update the hash functions without blocking.
+	select {
+	case l.update <- struct{}{}:
+	default:
 	}
 
 	return nil
@@ -244,10 +253,6 @@ func (l *Listener) run() {
 
 		select {
 		case <-l.ctx.Done():
-			l.m.Lock()
-			close(l.update)
-			l.update = nil
-			l.m.Unlock()
 			return
 
 		case <-ticker.C:
