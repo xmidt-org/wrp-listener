@@ -42,17 +42,6 @@ func vadorAcceptedSecrets(ok ...string) vador {
 	}
 }
 
-func vadorGetAuth(want string, err ...error) vador {
-	return func(assert *assert.Assertions, l *Listener) {
-		got, e := l.getAuth()
-		assert.Equal(want, got)
-
-		if err != nil {
-			assert.ErrorIs(e, err[0])
-		}
-	}
-}
-
 var validWHR = webhook.Registration{
 	Duration: webhook.CustomDuration(5 * time.Minute),
 }
@@ -103,7 +92,6 @@ func TestNew(t *testing.T) {
 			checks: []vador{
 				vadorBody,
 				vadorAcceptedSecrets(),
-				vadorGetAuth(""),
 			},
 		}, {
 			description: "nearly empty with an interval is ok",
@@ -112,7 +100,6 @@ func TestNew(t *testing.T) {
 			checks: []vador{
 				vadorBody,
 				vadorAcceptedSecrets(),
-				vadorGetAuth(""),
 			},
 		}, {
 			description: "nearly empty with an invalid interval",

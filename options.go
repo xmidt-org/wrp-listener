@@ -7,7 +7,6 @@ import (
 	"context"
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"hash"
 	"net/http"
@@ -84,97 +83,57 @@ func (h httpClientOption) String() string {
 	return "HTTPClient(nil)"
 }
 
-// AuthBasic is an option that provides the basic auth credentials to use
-// for the webhook listener registration to use.
-func AuthBasic(username, password string) Option {
-	return &authFuncOption{
-		text: fmt.Sprintf("AuthBasic(%s, ***)", username),
-		fn: func() (string, error) {
-			return basicToCredentials(username, password), nil
-		},
+// The Decorator type is an adapter to allow the use of ordinary functions as
+// decorators.  If f is a function with the appropriate signature,
+// DecoratorFunc(f) is a Decorator that calls f.
+type DecoratorFunc func(*http.Request) error
+
+func (d DecoratorFunc) Decorate(r *http.Request) error {
+	return d(r)
+}
+
+func (d DecoratorFunc) String() string {
+	return "DecoratorFunc(fn)"
+}
+
+// A Decorator decorates an http request before it is sent to the webhook
+// registration endpoint.
+type Decorator interface {
+	fmt.Stringer
+	Decorate(*http.Request) error
+}
+
+// DecorateRequest is an option that provides the function to use to decorate
+// the http request before it is sent to the webhook registration endpoint.
+// This is useful for adding headers or other information to the request.
+//
+// Examples of this include adding an authorization header, or additional
+// headers to the request.
+//
+// Multiple DecorateRequest options can be provided.  They will be called in
+// the order they are provided.
+func DecorateRequest(d Decorator) Option {
+	return &decorateRequestOption{
+		d: d,
 	}
 }
 
-// AuthBasicFunc is an option that provides a function that will be called
-// to get the basic auth credentials to use for the webhook listener
-// registration to use.  A nil value will cause no credentials to be used.
-func AuthBasicFunc(fn func() (username string, password string, err error)) Option {
-	if fn == nil {
-		return &authFuncOption{
-			text: "AuthBasicFunc(nil)",
-			fn: func() (string, error) {
-				return "", nil
-			},
-		}
-	}
-
-	return &authFuncOption{
-		text: "AuthBasicFunc(fn)",
-		fn: func() (string, error) {
-			username, password, err := fn()
-			if err != nil {
-				return "", err
-			}
-			return basicToCredentials(username, password), nil
-		},
-	}
+type decorateRequestOption struct {
+	d Decorator
 }
 
-// AuthBearerFunc is an option that provides a function that will be called
-// to get the bearer auth token to use for the webhook listener registration to
-// use.  A nil value will cause no credentials to be used.
-func AuthBearerFunc(fn func() (string, error)) Option {
-	if fn == nil {
-		return &authFuncOption{
-			text: "AuthBearerFunc(nil)",
-			fn: func() (string, error) {
-				return "", nil
-			},
-		}
+func (d decorateRequestOption) apply(lis *Listener) error {
+	if d.d != nil {
+		lis.reqDecorators = append(lis.reqDecorators, d.d)
 	}
-
-	return &authFuncOption{
-		text: "AuthBearerFunc(fn)",
-		fn: func() (string, error) {
-			token, err := fn()
-			if err != nil {
-				return "", err
-			}
-			return "Bearer " + token, nil
-		},
-	}
-}
-
-// AuthBearer is an option that provides the bearer auth token to use for
-// the webhook listener registration to use.  An empty value will cause no
-// credentials to be used.
-func AuthBearer(token string) Option {
-	return &authFuncOption{
-		text: "AuthBearer(***)",
-		fn: func() (string, error) {
-			return "Bearer " + token, nil
-		},
-	}
-}
-
-func basicToCredentials(username, password string) string {
-	credentials := username + ":" + password
-	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(credentials))
-	return "Basic " + encodedCredentials
-}
-
-type authFuncOption struct {
-	text string
-	fn   func() (string, error)
-}
-
-func (a authFuncOption) apply(lis *Listener) error {
-	lis.getAuth = a.fn
 	return nil
 }
 
-func (a authFuncOption) String() string {
-	return a.text
+func (d decorateRequestOption) String() string {
+	if d.d != nil {
+		return "DecorateRequest(" + d.d.String() + ")"
+	}
+	return "DecorateRequest(nil)"
 }
 
 // AcceptedSecrets is an option that provides the list of secrets accepted

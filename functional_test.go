@@ -68,7 +68,6 @@ func TestNormalUsage(t *testing.T) {
 		},
 		server.URL,
 		Interval(1*time.Millisecond),
-		AuthBasic("user", "pass"),
 	)
 	require.NotNil(whl)
 	require.NoError(err)
@@ -271,7 +270,7 @@ func TestFailedAuthCheck(t *testing.T) {
 			assert.Zero(e.At)
 			assert.Zero(e.Duration)
 			assert.ErrorIs(e.Err, ErrRegistrationNotAttempted)
-			assert.ErrorIs(e.Err, ErrAuthFetchFailed)
+			assert.ErrorIs(e.Err, ErrDecoratorFailed)
 		},
 	}
 
@@ -287,9 +286,11 @@ func TestFailedAuthCheck(t *testing.T) {
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
 		"http://example.com",
-		AuthBearerFunc(func() (string, error) {
-			return "", fmt.Errorf("nope")
-		}),
+		DecorateRequest(
+			DecoratorFunc(func(r *http.Request) error {
+				return fmt.Errorf("nope")
+			}),
+		),
 	)
 
 	require.NotNil(whl)
@@ -479,7 +480,6 @@ func TestFailsAfterABit(t *testing.T) {
 		},
 		server.URL,
 		Interval(1*time.Millisecond),
-		AuthBasic("user", "pass"),
 	)
 	require.NotNil(whl)
 	require.NoError(err)

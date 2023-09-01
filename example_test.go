@@ -78,7 +78,13 @@ func ExampleBasicAuth() { // nolint: govet
 
 	url := server.URL // replace with the URL of the webhook provider
 	whl, err := listener.New(&r, url,
-		listener.AuthBasic("username", "password"),
+		listener.DecorateRequest(listener.DecoratorFunc(
+			func(r *http.Request) error {
+				// Add basic auth headers to the request.
+				r.SetBasicAuth("username", "password")
+				return nil
+			},
+		)),
 		listener.AcceptSHA1(),
 		listener.AcceptedSecrets("foobar", "carport"),
 	)
@@ -126,7 +132,12 @@ func ExampleBearerAuth() { // nolint: govet
 
 	url := server.URL // replace with the URL of the webhook provider
 	whl, err := listener.New(&r, url,
-		listener.AuthBearer(os.Getenv("BEARER_TOKEN")),
+		listener.DecorateRequest(listener.DecoratorFunc(
+			func(r *http.Request) error {
+				r.Header.Set("Authorization", "Bearer "+os.Getenv("BEARER_TOKEN"))
+				return nil
+			},
+		)),
 		listener.AcceptSHA1(),
 		listener.AcceptedSecrets(sharedSecret...),
 	)

@@ -85,7 +85,15 @@ func main() {
 	}
 
 	whl, err := listener.New(&r, webhookURL,
-		listener.AuthBearer(os.Getenv("WEBHOOK_BEARER_TOKEN")),
+		listener.DecorateRequest(listener.DecoratorFunc(
+			func(r *http.Request) error {
+				if os.Getenv("WEBHOOK_BEARER_TOKEN") == "" {
+					return nil
+				}
+				r.Header.Set("Authorization", "Bearer "+os.Getenv("WEBHOOK_BEARER_TOKEN"))
+				return nil
+			},
+		)),
 		listener.AcceptSHA1(),
 		listener.Once(),
 		listener.AcceptedSecrets(sharedSecrets...),
