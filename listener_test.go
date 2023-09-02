@@ -105,7 +105,7 @@ func commonNewTest(t *testing.T, tests []newTest) {
 			if tc.noRegistration {
 				rPtr = nil
 			}
-			got, err := New(rPtr, url, opts...)
+			got, err := New(url, rPtr, opts...)
 
 			if tc.expectedErr != nil {
 				assert.Nil(got)
@@ -290,10 +290,11 @@ func TestTokenize(t *testing.T) {
 			require := require.New(t)
 
 			opts := append(tc.opts, tc.opt)
-			whl, err := New(&webhook.Registration{
-				Duration: webhook.CustomDuration(5 * time.Minute),
-			},
+			whl, err := New(
 				"http://example.com",
+				&webhook.Registration{
+					Duration: webhook.CustomDuration(5 * time.Minute),
+				},
 				opts...,
 			)
 
@@ -438,10 +439,10 @@ func TestAuthorize(t *testing.T) {
 
 			opts := append(tc.opts, tc.opt)
 			whl, err := New(
+				"http://example.com",
 				&webhook.Registration{
 					Duration: webhook.CustomDuration(5 * time.Minute),
 				},
-				"http://example.com",
 				opts...,
 			)
 
@@ -496,7 +497,7 @@ func TestListener_Accept(t *testing.T) {
 
 			r := validWHR
 			opts := append(tc.opts, tc.opt)
-			l, err := New(&r, "http://example.com", opts...)
+			l, err := New("http://example.com", &r, opts...)
 			require.NotNil(l)
 			require.NoError(err)
 
@@ -538,7 +539,7 @@ func TestListener_String(t *testing.T) {
 
 			r := validWHR
 			opts := append(tc.opts, tc.opt)
-			l, err := New(&r, "http://example.com", opts...)
+			l, err := New("http://example.com", &r, opts...)
 			require.NotNil(l)
 			require.NoError(err)
 

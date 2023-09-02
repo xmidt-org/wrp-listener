@@ -58,6 +58,7 @@ func TestNormalUsage(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		server.URL,
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -67,7 +68,6 @@ func TestNormalUsage(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		server.URL,
 		Interval(1*time.Millisecond),
 	)
 	require.NotNil(whl)
@@ -152,6 +152,7 @@ func TestSingleShotUsage(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		server.URL,
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -161,7 +162,6 @@ func TestSingleShotUsage(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		server.URL,
 		Once(),
 		WithRegistrationEventListener(event.RegistrationFunc(
 			func(e event.Registration) {
@@ -229,6 +229,7 @@ func TestFailedHTTPCall(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		server.URL,
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -238,7 +239,6 @@ func TestFailedHTTPCall(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		server.URL,
 		Once(),
 		WithRegistrationEventListener(event.RegistrationFunc(
 			func(e event.Registration) {
@@ -264,6 +264,7 @@ func TestFailedAuthCheck(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		"http://example.com",
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -273,7 +274,6 @@ func TestFailedAuthCheck(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		"http://example.com",
 		DecorateRequest(
 			DecoratorFunc(func(r *http.Request) error {
 				return fmt.Errorf("nope")
@@ -306,6 +306,7 @@ func TestFailedNewRequest(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		"//invalid::localhost/:99999",
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -315,8 +316,6 @@ func TestFailedNewRequest(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		"//invalid::localhost/:99999",
-
 		WithRegistrationEventListener(event.RegistrationFunc(
 			func(e event.Registration) {
 				assert.Zero(e.StatusCode)
@@ -341,6 +340,7 @@ func TestCancelListener(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		"//invalid::localhost/:99999",
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -350,7 +350,6 @@ func TestCancelListener(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		"//invalid::localhost/:99999",
 	)
 
 	require.NotNil(whl)
@@ -384,6 +383,7 @@ func TestFailedConnect(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		server.URL,
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -393,7 +393,6 @@ func TestFailedConnect(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		server.URL,
 		HTTPClient(&http.Client{Timeout: 1 * time.Millisecond}),
 		Once(),
 	)
@@ -444,6 +443,7 @@ func TestFailsAfterABit(t *testing.T) {
 
 	// Create the listener.
 	whl, err := New(
+		server.URL,
 		&webhook.Registration{
 			Events: []string{
 				"foo",
@@ -453,7 +453,6 @@ func TestFailsAfterABit(t *testing.T) {
 			},
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
-		server.URL,
 		Interval(1*time.Millisecond),
 	)
 	require.NotNil(whl)
