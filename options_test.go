@@ -8,14 +8,18 @@ import (
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/xmidt-org/webhook-schema"
+	"github.com/xmidt-org/wrp-listener/event"
 )
 
 func TestOptionStrings(t *testing.T) {
+	var cancel CancelEventListenerFunc
+
 	tests := []struct {
 		in       Option
 		expected string
@@ -62,6 +66,33 @@ func TestOptionStrings(t *testing.T) {
 		}, {
 			in:       Context(context.Background()),
 			expected: "Context(ctx)",
+		}, {
+			in:       WithAuthorizeEventListener(event.AuthorizeFunc(func(event.Authorize) {}), &cancel),
+			expected: "WithAuthorizeEventListener(lstnr, *cancel)",
+		}, {
+			in:       WithTokenizeEventListener(event.TokenizeFunc(func(event.Tokenize) {}), &cancel),
+			expected: "WithTokenizeEventListener(lstnr, *cancel)",
+		}, {
+			in:       WithRegistrationEventListener(event.RegistrationFunc(func(event.Registration) {}), &cancel),
+			expected: "WithRegistrationEventListener(lstnr, *cancel)",
+		}, {
+			in:       WithAuthorizeEventListener(event.AuthorizeFunc(func(event.Authorize) {})),
+			expected: "WithAuthorizeEventListener(lstnr)",
+		}, {
+			in:       WithTokenizeEventListener(event.TokenizeFunc(func(event.Tokenize) {})),
+			expected: "WithTokenizeEventListener(lstnr)",
+		}, {
+			in:       WithRegistrationEventListener(event.RegistrationFunc(func(event.Registration) {})),
+			expected: "WithRegistrationEventListener(lstnr)",
+		}, {
+			in:       WithAuthorizeEventListener(nil),
+			expected: "WithAuthorizeEventListener(nil)",
+		}, {
+			in:       WithTokenizeEventListener(nil),
+			expected: "WithTokenizeEventListener(nil)",
+		}, {
+			in:       WithRegistrationEventListener(nil),
+			expected: "WithRegistrationEventListener(nil)",
 		},
 	}
 
@@ -227,4 +258,179 @@ func TestContext(t *testing.T) {
 		},
 	}
 	commonNewTest(t, tests)
+}
+
+func TestWithAuthorizeEventListener(t *testing.T) {
+	m := sync.Mutex{}
+	var cancel CancelEventListenerFunc
+	var cancel2 CancelEventListenerFunc
+
+	var count int
+	listener := event.AuthorizeFunc(func(event.Authorize) {
+		count++
+	})
+
+	assert.Nil(t, cancel)
+
+	tests := []newTest{
+		{
+			description: "assert WithAuthorizeEventListener() with cancel works",
+			r:           validWHR,
+			opt:         WithAuthorizeEventListener(listener, &cancel),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				count = 0
+				_ = l.dispatch(event.Authorize{})
+				assert.Equal(1, count)
+			},
+		}, {
+			description: "assert WithAuthorizeEventListener() with cancel work can be canceled",
+			r:           validWHR,
+			opt:         WithAuthorizeEventListener(listener, &cancel2),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				cancel2()
+
+				count = 0
+				_ = l.dispatch(event.Authorize{})
+				assert.Equal(0, count)
+			},
+		}, {
+			description: "assert WithAuthorizeEventListener() without cancel works",
+			r:           validWHR,
+			opt:         WithAuthorizeEventListener(listener),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				count = 0
+				_ = l.dispatch(event.Authorize{})
+				assert.Equal(1, count)
+			},
+		},
+	}
+	commonNewTest(t, tests)
+
+	assert.NotNil(t, cancel)
+}
+
+func TestWithTokenizeEventListener(t *testing.T) {
+	m := sync.Mutex{}
+	var cancel CancelEventListenerFunc
+	var cancel2 CancelEventListenerFunc
+
+	var count int
+	listener := event.TokenizeFunc(func(event.Tokenize) {
+		count++
+	})
+
+	assert.Nil(t, cancel)
+
+	tests := []newTest{
+		{
+			description: "assert WithTokenizeEventListener() with cancel works",
+			r:           validWHR,
+			opt:         WithTokenizeEventListener(listener, &cancel),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				count = 0
+				_ = l.dispatch(event.Tokenize{})
+				assert.Equal(1, count)
+			},
+		}, {
+			description: "assert WithTokenizeEventListener() with cancel work can be canceled",
+			r:           validWHR,
+			opt:         WithTokenizeEventListener(listener, &cancel2),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				cancel2()
+
+				count = 0
+				_ = l.dispatch(event.Tokenize{})
+				assert.Equal(0, count)
+			},
+		}, {
+			description: "assert WithTokenizeEventListener() without cancel works",
+			r:           validWHR,
+			opt:         WithTokenizeEventListener(listener),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				count = 0
+				_ = l.dispatch(event.Tokenize{})
+				assert.Equal(1, count)
+			},
+		},
+	}
+	commonNewTest(t, tests)
+
+	assert.NotNil(t, cancel)
+}
+
+// duplicate of TestWithAuthorizeEventListener(t *testing.T) for RegistrationEventListenerFunc
+func TestWithRegistrationEventListener(t *testing.T) {
+	m := sync.Mutex{}
+	var cancel CancelEventListenerFunc
+	var cancel2 CancelEventListenerFunc
+
+	var count int
+	listener := event.RegistrationFunc(func(event.Registration) {
+		count++
+	})
+
+	assert.Nil(t, cancel)
+
+	tests := []newTest{
+		{
+			description: "assert WithRegistrationEventListener() with cancel works",
+			r:           validWHR,
+			opt:         WithRegistrationEventListener(listener, &cancel),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				count = 0
+				_ = l.dispatch(event.Registration{})
+				assert.Equal(1, count)
+			},
+		}, {
+			description: "assert WithRegistrationEventListener() with cancel work can be canceled",
+			r:           validWHR,
+			opt:         WithRegistrationEventListener(listener, &cancel2),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				cancel2()
+
+				count = 0
+				_ = l.dispatch(event.Registration{})
+				assert.Equal(0, count)
+			},
+		}, {
+			description: "assert WithRegistrationEventListener() without cancel works",
+			r:           validWHR,
+			opt:         WithRegistrationEventListener(listener),
+			check: func(assert *assert.Assertions, l *Listener) {
+				m.Lock()
+				defer m.Unlock()
+
+				count = 0
+				_ = l.dispatch(event.Registration{})
+				assert.Equal(1, count)
+			},
+		},
+	}
+	commonNewTest(t, tests)
+
+	assert.NotNil(t, cancel)
 }
