@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/xmidt-org/webhook-schema"
+	"github.com/xmidt-org/wrp-listener/event"
 )
 
 // Interval is an option that sets the interval to wait between webhook
@@ -280,4 +281,124 @@ func (c contextOption) apply(lis *Listener) error {
 
 func (c contextOption) String() string {
 	return "Context(ctx)"
+}
+
+// WithRegistrationEventListener is an option that provides the listener
+// to use for webhook registration events.  If the optional cancel parameter
+// is provided, it will be set to a function that can be used to cancel the
+// listener.
+func WithAuthorizeEventListener(listener event.AuthorizeListener, cancel ...*CancelEventListenerFunc) Option {
+	if len(cancel) > 0 {
+		return &withAuthorizeEventListenerOption{
+			lis:    listener,
+			cancel: cancel[0],
+		}
+	}
+
+	return &withAuthorizeEventListenerOption{
+		lis: listener,
+	}
+}
+
+type withAuthorizeEventListenerOption struct {
+	lis    event.AuthorizeListener
+	cancel *CancelEventListenerFunc
+}
+
+func (a withAuthorizeEventListenerOption) apply(lis *Listener) error {
+	cancel := lis.authorizeListeners.addListener(a.lis)
+	if a.cancel != nil {
+		*a.cancel = cancel
+	}
+	return nil
+}
+
+func (a withAuthorizeEventListenerOption) String() string {
+	if a.lis == nil {
+		return "WithAuthorizeEventListener(nil)"
+	}
+	if a.cancel != nil {
+		return "WithAuthorizeEventListener(lstnr, *cancel)"
+	}
+	return "WithAuthorizeEventListener(lstnr)"
+}
+
+// WithTokenizeEventListener is an option that provides the listener
+// to use for webhook tokenize events.  If the optional cancel parameter
+// is provided, it will be set to a function that can be used to cancel the
+// listener.
+func WithTokenizeEventListener(listener event.TokenizeListener, cancel ...*CancelEventListenerFunc) Option {
+	if len(cancel) > 0 {
+		return &withTokenizeEventListenerOption{
+			lis:    listener,
+			cancel: cancel[0],
+		}
+	}
+
+	return &withTokenizeEventListenerOption{
+		lis: listener,
+	}
+}
+
+type withTokenizeEventListenerOption struct {
+	lis    event.TokenizeListener
+	cancel *CancelEventListenerFunc
+}
+
+func (a withTokenizeEventListenerOption) apply(lis *Listener) error {
+	cancel := lis.tokenizeListeners.addListener(a.lis)
+	if a.cancel != nil {
+		*a.cancel = cancel
+	}
+	return nil
+}
+
+func (a withTokenizeEventListenerOption) String() string {
+	if a.lis == nil {
+		return "WithTokenizeEventListener(nil)"
+	}
+	if a.cancel != nil {
+		return "WithTokenizeEventListener(lstnr, *cancel)"
+	}
+	return "WithTokenizeEventListener(lstnr)"
+}
+
+// WithRegistrationEventListener is an option that provides the listener
+// to use for webhook registration events.  If the optional cancel parameter
+// is provided, it will be set to a function that can be used to cancel the
+// listener.
+func WithRegistrationEventListener(listener event.RegistrationListener, cancel ...*CancelEventListenerFunc) Option {
+	if len(cancel) > 0 {
+		return &withRegistrationEventListenerOption{
+			lis:    listener,
+			cancel: cancel[0],
+		}
+	}
+
+	return &withRegistrationEventListenerOption{
+		lis: listener,
+	}
+}
+
+type withRegistrationEventListenerOption struct {
+	lis    event.RegistrationListener
+	cancel *CancelEventListenerFunc
+}
+
+func (a withRegistrationEventListenerOption) apply(lis *Listener) error {
+	cancel := lis.registrationListeners.addListener(a.lis)
+	if a.cancel != nil {
+		*a.cancel = cancel
+	}
+	return nil
+}
+
+func (a withRegistrationEventListenerOption) String() string {
+	if a.lis == nil {
+		return "WithRegistrationEventListener(nil)"
+	}
+	if a.cancel != nil {
+		return "WithRegistrationEventListener(lstnr, *cancel)"
+	}
+	return "WithRegistrationEventListener(lstnr)"
 }

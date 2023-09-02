@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xmidt-org/webhook-schema"
+	"github.com/xmidt-org/wrp-listener/event"
 )
 
 type vador func(*assert.Assertions, *Listener)
@@ -44,30 +45,6 @@ func vadorAcceptedSecrets(ok ...string) vador {
 
 var validWHR = webhook.Registration{
 	Duration: webhook.CustomDuration(5 * time.Minute),
-}
-
-type testListener struct {
-	re func(EventRegistration)
-	te func(TokenizeEvent)
-	ae func(AuthorizeEvent)
-}
-
-func (tl *testListener) OnRegistrationEvent(e EventRegistration) {
-	if tl.re != nil {
-		tl.re(e)
-	}
-}
-
-func (tl *testListener) OnTokenizeEvent(e TokenizeEvent) {
-	if tl.te != nil {
-		tl.te(e)
-	}
-}
-
-func (tl *testListener) OnAuthorizeEvent(e AuthorizeEvent) {
-	if tl.ae != nil {
-		tl.ae(e)
-	}
 }
 
 // TestNew is focused on validating the input to New and not all the forms of
@@ -159,7 +136,7 @@ func TestTokenize(t *testing.T) {
 		opts        []Option
 		expected    Token
 		expectedErr error
-		event       *TokenizeEvent
+		event       *event.Tokenize
 	}{
 		{
 			description: "basic test",
@@ -173,7 +150,7 @@ func TestTokenize(t *testing.T) {
 				alg:       "sha1",
 				principal: "12345",
 			},
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header:     webpaHeader,
 				Algorithms: []string{"none", "sha1"},
 				Algorithm:  "sha1",
@@ -190,7 +167,7 @@ func TestTokenize(t *testing.T) {
 				alg:       "sha1",
 				principal: "12345",
 			},
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header:     xmidtHeader,
 				Algorithms: []string{"none", "sha1"},
 				Algorithm:  "sha1",
@@ -210,7 +187,7 @@ func TestTokenize(t *testing.T) {
 				alg:       "sha1",
 				principal: "12345",
 			},
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header:     webpaHeader,
 				Algorithms: []string{"none", "sha1"},
 				Algorithm:  "sha1",
@@ -222,7 +199,7 @@ func TestTokenize(t *testing.T) {
 				alg:       "none",
 				principal: "",
 			},
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Algorithms: []string{"none"},
 				Algorithm:  "none",
 			},
@@ -238,7 +215,7 @@ func TestTokenize(t *testing.T) {
 				alg:       "none",
 				principal: "",
 			},
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header:     webpaHeader,
 				Algorithms: []string{"none"},
 				Algorithm:  "none",
@@ -251,7 +228,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			expectedErr: ErrInvalidTokenHeader,
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header: webpaHeader,
 				Err:    ErrInvalidHeaderFormat,
 			},
@@ -263,7 +240,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			expectedErr: ErrInvalidTokenHeader,
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header: webpaHeader,
 				Err:    ErrInvalidHeaderFormat,
 			},
@@ -275,7 +252,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			expectedErr: ErrInvalidTokenHeader,
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header: webpaHeader,
 				Err:    ErrInvalidHeaderFormat,
 			},
@@ -287,7 +264,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			expectedErr: ErrInvalidTokenHeader,
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header: webpaHeader,
 				Err:    ErrInvalidHeaderFormat,
 			},
@@ -299,7 +276,7 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 			expectedErr: ErrAlgorithmNotFound,
-			event: &TokenizeEvent{
+			event: &event.Tokenize{
 				Header:     webpaHeader,
 				Algorithms: []string{"none", "sha256"},
 				Err:        ErrAlgorithmNotFound,
@@ -324,16 +301,13 @@ func TestTokenize(t *testing.T) {
 			require.NoError(err)
 
 			if tc.event != nil {
-				tl := &testListener{
-					te: func(e TokenizeEvent) {
+				got := whl.AddTokenizeEventListener(event.TokenizeFunc(
+					func(e event.Tokenize) {
 						assert.Equal(tc.event.Header, e.Header)
 						assert.Equal(tc.event.Algorithms, e.Algorithms)
 						assert.Equal(tc.event.Algorithm, e.Algorithm)
 						assert.ErrorIs(e.Err, tc.event.Err)
-					},
-				}
-
-				got := whl.AddTokenizeEventListener(tl)
+					}))
 				require.NotNil(got)
 			}
 
@@ -362,7 +336,7 @@ func TestAuthorize(t *testing.T) {
 		opt         Option
 		opts        []Option
 		expectedErr error
-		event       *AuthorizeEvent
+		event       *event.Authorize
 	}{
 		{
 			description: "basic test",
@@ -377,7 +351,7 @@ func TestAuthorize(t *testing.T) {
 				alg:       "sha1",
 				principal: "f76a55b14b2b3bd08116b4ee857dd6439b507317",
 			},
-			event: &AuthorizeEvent{
+			event: &event.Authorize{
 				Algorithm: "sha1",
 			},
 		}, {
@@ -393,7 +367,7 @@ func TestAuthorize(t *testing.T) {
 				alg:       "sha1",
 				principal: "0000",
 			},
-			event: &AuthorizeEvent{
+			event: &event.Authorize{
 				Algorithm: "sha1",
 				Err:       ErrInvalidSignature,
 			},
@@ -411,7 +385,7 @@ func TestAuthorize(t *testing.T) {
 				alg:       "sha1",
 				principal: "823688dafca7393d24c871a2da98a84d8732e927",
 			},
-			event: &AuthorizeEvent{
+			event: &event.Authorize{
 				Algorithm: "sha1",
 			},
 		}, {
@@ -424,7 +398,7 @@ func TestAuthorize(t *testing.T) {
 				alg:       "sha1",
 				principal: "823688dafca7393d24c871a2da98a84d8732e927",
 			},
-			event: &AuthorizeEvent{
+			event: &event.Authorize{
 				Algorithm: "sha1",
 			},
 		}, {
@@ -434,7 +408,7 @@ func TestAuthorize(t *testing.T) {
 				principal: "f", // invalid because it needs to be 2 characters.
 			},
 			expectedErr: ErrInvalidSignature,
-			event: &AuthorizeEvent{
+			event: &event.Authorize{
 				Err: ErrInvalidSignature,
 			},
 		}, {
@@ -450,7 +424,7 @@ func TestAuthorize(t *testing.T) {
 				principal: "f0",
 			},
 			expectedErr: ErrNotAcceptedHash,
-			event: &AuthorizeEvent{
+			event: &event.Authorize{
 				Algorithm: "sha1",
 				Err:       ErrNotAcceptedHash,
 			},
@@ -472,14 +446,11 @@ func TestAuthorize(t *testing.T) {
 			)
 
 			if tc.event != nil {
-				tl := &testListener{
-					ae: func(e AuthorizeEvent) {
+				got := whl.AddAuthorizeEventListener(event.AuthorizeFunc(
+					func(e event.Authorize) {
 						assert.Equal(tc.event.Algorithm, e.Algorithm)
 						assert.ErrorIs(e.Err, tc.event.Err)
-					},
-				}
-
-				got := whl.AddAuthorizeEventListener(tl)
+					}))
 				require.NotNil(got)
 			}
 
