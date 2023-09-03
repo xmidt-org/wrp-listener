@@ -25,6 +25,7 @@ func TestString(t *testing.T) {
 				"  Duration:   0s\n" +
 				"  Body:       ''\n" +
 				"  StatusCode: 0\n" +
+				"  Until:      0001-01-01T00:00:00Z\n" +
 				"  Err:        <nil>\n" +
 				"}\n",
 		}, {

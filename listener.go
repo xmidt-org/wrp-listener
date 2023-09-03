@@ -333,6 +333,7 @@ func (l *Listener) register(locked bool) error {
 	evnt.StatusCode = resp.StatusCode
 
 	if resp.StatusCode == http.StatusOK {
+		evnt.Until = evnt.At.Add(time.Duration(l.registration.Duration))
 		return l.dispatch(evnt)
 	}
 

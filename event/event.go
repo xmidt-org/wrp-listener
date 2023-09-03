@@ -39,6 +39,9 @@ type Registration struct {
 	// StatusCode holds the HTTP status code returned by the webhook registration.
 	StatusCode int
 
+	// Until holds the time the registration expires if applicable.
+	Until time.Time
+
 	// Err holds any error that occurred while performing the registration.
 	Err error
 }
@@ -51,6 +54,7 @@ func (r Registration) String() string {
 	buf.WriteString(fmt.Sprintf("  Duration:   %s\n", r.Duration.String()))
 	buf.WriteString(fmt.Sprintf("  Body:       '%s'\n", string(r.Body)))
 	buf.WriteString(fmt.Sprintf("  StatusCode: %d\n", r.StatusCode))
+	buf.WriteString(fmt.Sprintf("  Until:      %s\n", r.Until.Format(time.RFC3339)))
 	buf.WriteString(fmt.Sprintf("  Err:        %v\n", r.Err))
 	buf.WriteString("}\n")
 
