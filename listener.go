@@ -183,7 +183,8 @@ func (l *Listener) Register(secret ...string) error {
 	}
 
 	if l.interval == 0 {
-		return l.register(true)
+		_, err := l.register(true, time.Time{})
+		return err
 	}
 
 	l.ctx, l.shutdown = context.WithCancel(l.upstreamCtx)
@@ -237,6 +238,7 @@ func (l *Listener) Accept(secrets []string) {
 // run is the main loop for the webhook listener.  It will register the webhook
 // at the given interval until Stop() is called.
 func (l *Listener) run() {
+	var presentExpiration time.Time
 	l.wg.Add(1)
 	defer l.wg.Done()
 
@@ -244,7 +246,14 @@ func (l *Listener) run() {
 	defer ticker.Stop()
 
 	for {
-		_ = l.register(false)
+		exp, err := l.register(false, presentExpiration)
+		if err == nil {
+			presentExpiration = exp
+			ticker.Reset(l.interval)
+		} else {
+			// TODO add better retry logic
+			ticker.Reset(time.Second)
+		}
 
 		select {
 		case <-l.ctx.Done():
@@ -281,7 +290,7 @@ func (l *Listener) String() string {
 // register registers the webhook listener.  The newest secret will be used for
 // the registration.  The locked argument determines if a mutex is already held
 // by the caller to prevent deadlock.
-func (l *Listener) register(locked bool) error {
+func (l *Listener) register(locked bool, presentExpiration time.Time) (time.Time, error) {
 	// Keep the lock block as small as possible.  Copy out the values that are
 	// needed and release the lock.
 	if !locked {
@@ -295,19 +304,21 @@ func (l *Listener) register(locked bool) error {
 		l.m.RUnlock()
 	}
 
-	var evnt event.Registration
+	evnt := event.Registration{
+		Until: presentExpiration,
+	}
 
 	req, err := http.NewRequest(http.MethodPost, address, bytes.NewReader(body))
 	if err != nil {
 		evnt.Err = multierr.Combine(err, ErrNewRequestFailed, ErrRegistrationNotAttempted)
-		return l.dispatch(evnt)
+		return time.Time{}, l.dispatch(evnt)
 	}
 
 	for _, decorator := range l.reqDecorators {
 		err := decorator.Decorate(req)
 		if err != nil {
 			evnt.Err = multierr.Combine(err, ErrDecoratorFailed, ErrRegistrationNotAttempted)
-			return l.dispatch(evnt)
+			return time.Time{}, l.dispatch(evnt)
 		}
 	}
 
@@ -319,7 +330,7 @@ func (l *Listener) register(locked bool) error {
 
 	if err != nil {
 		evnt.Err = multierr.Combine(err, ErrRegistrationFailed)
-		return l.dispatch(evnt)
+		return time.Time{}, l.dispatch(evnt)
 	}
 	defer resp.Body.Close()
 
@@ -327,13 +338,13 @@ func (l *Listener) register(locked bool) error {
 
 	if resp.StatusCode == http.StatusOK {
 		evnt.Until = evnt.At.Add(time.Duration(l.registration.Duration))
-		return l.dispatch(evnt)
+		return evnt.Until, l.dispatch(evnt)
 	}
 
 	evnt.Body, _ = io.ReadAll(resp.Body)
 	evnt.Err = ErrRegistrationFailed
 
-	return l.dispatch(evnt)
+	return time.Time{}, l.dispatch(evnt)
 }
 
 // Tokenize parses the token from the request header.  If the token is not found
