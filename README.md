@@ -21,26 +21,31 @@ or set up to run at an interval.
 The below code snippet gets you registered to the webhook and events flowing to you.
 
 ```golang
-	r := webhook.Registration{
-		Config: webhook.DeliveryConfig{
-			ReceiverURL: receiverURL,
-			ContentType: contentType,
-		},
-		Events:   []string{events},
-		Duration: webhook.CustomDuration(5 * time.Minute),
-	}
-
-	l, _ := listener.New(&r, "https://example.com",
-		listener.AuthBearer(os.Getenv("WEBHOOK_BEARER_TOKEN")),
+	l, err := listener.New("https://example.com",
+		&webhook.Registration{
+			Config: webhook.DeliveryConfig{
+				ReceiverURL: receiverURL,
+				ContentType: contentType,
+			},
+			Events:   []string{events},
+			Duration: webhook.CustomDuration(5 * time.Minute),
+		},		
 		listener.AcceptSHA1(),
-		listener.Logger(logger),
 		listener.Interval(1 * time.Minute),
 		listener.AcceptedSecrets(sharedSecrets...),
-    
-    _ = l.Register(sharedSecrets[0])
+	)
+	if err != nil {
+		panic(err)
+	}
+
+    err = l.Register(sharedSecrets[0])
+	if err != nil {
+		panic(err)
+	}
 ```
 
-Authorization is also pretty simple.
+Authorization that the information from the webhook likstener provider is also
+pretty simple.
 
 ```golang
 func (el *eventListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
