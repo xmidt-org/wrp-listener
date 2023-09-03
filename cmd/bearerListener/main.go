@@ -69,22 +69,21 @@ func main() {
 	fmt.Println("WEBHOOK_CONTENT_TYPE    : ", contentType)
 	fmt.Printf("                 use TLS: %t\n", useTLS)
 
-	// Create the listener.
-	r := webhook.Registration{
-		Config: webhook.DeliveryConfig{
-			ReceiverURL: receiverURL,
-			ContentType: contentType,
-		},
-		Events:   []string{events},
-		Duration: webhook.CustomDuration(15 * time.Second),
-	}
-
 	sharedSecrets := strings.Split(os.Getenv("WEBHOOK_SHARED_SECRETS"), ",")
 	for i := range sharedSecrets {
 		sharedSecrets[i] = strings.TrimSpace(sharedSecrets[i])
 	}
 
-	whl, err := listener.New(&r, webhookURL,
+	// Create the listener.
+	whl, err := listener.New(webhookURL,
+		&webhook.Registration{
+			Config: webhook.DeliveryConfig{
+				ReceiverURL: receiverURL,
+				ContentType: contentType,
+			},
+			Events:   []string{events},
+			Duration: webhook.CustomDuration(15 * time.Second),
+		},
 		listener.DecorateRequest(listener.DecoratorFunc(
 			func(r *http.Request) error {
 				if os.Getenv("WEBHOOK_BEARER_TOKEN") == "" {

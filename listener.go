@@ -60,7 +60,7 @@ type Option interface {
 }
 
 // New creates a new webhook listener with the given registration and options.
-func New(r *webhook.Registration, url string, opts ...Option) (*Listener, error) {
+func New(url string, r *webhook.Registration, opts ...Option) (*Listener, error) {
 	if r == nil {
 		return nil, fmt.Errorf("%w: registration is required", ErrInput)
 	}
