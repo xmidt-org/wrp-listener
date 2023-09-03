@@ -4,6 +4,7 @@
 package listener
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -109,6 +110,85 @@ func TestNormalUsage(t *testing.T) {
 
 	// Re-stop because it could happen.
 	whl.Stop()
+}
+
+func TestNormalUsageCancelWithContext(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	var m sync.Mutex
+
+	expectSecret := []string{"secret1"}
+
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				assert.NoError(err)
+				r.Body.Close()
+
+				var reg webhook.Registration
+				err = json.Unmarshal(body, &reg)
+				assert.NoError(err)
+
+				found := false
+				m.Lock()
+				defer m.Unlock()
+				for _, s := range expectSecret {
+					if s == reg.Config.Secret {
+						found = true
+						break
+					}
+				}
+
+				assert.True(found)
+
+				w.WriteHeader(http.StatusOK)
+			},
+		),
+	)
+	defer server.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Create the listener.
+	whl, err := New(
+		server.URL,
+		&webhook.Registration{
+			Events: []string{
+				"foo",
+			},
+			Config: webhook.DeliveryConfig{
+				Secret: "secret1",
+			},
+			Duration: webhook.CustomDuration(5 * time.Minute),
+		},
+		Interval(1*time.Millisecond),
+		Context(ctx),
+	)
+	require.NotNil(whl)
+	require.NoError(err)
+
+	err = whl.Register("secret1")
+	assert.NoError(err)
+
+	// Wait a bit then roll the secret..
+	time.Sleep(time.Millisecond)
+	m.Lock()
+	expectSecret = append(expectSecret, "secret2")
+	m.Unlock()
+
+	cancel()
+
+	// This should not block.
+	whl.wg.Wait()
+
+	// This should not restart.
+	err = whl.Register()
+	assert.NoError(err)
+
+	// This should not block.
+	whl.wg.Wait()
 }
 
 func TestSingleShotUsage(t *testing.T) {
