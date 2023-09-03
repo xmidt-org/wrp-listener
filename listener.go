@@ -196,19 +196,12 @@ func (l *Listener) Register(secret ...string) error {
 // no-op.
 func (l *Listener) Stop() {
 	l.m.Lock()
-
-	if l.shutdown == nil {
-		l.m.Unlock()
-		return
-	}
 	shutdown := l.shutdown
-	l.shutdown = nil
 	l.m.Unlock()
 
-	// Make sure not to hold the lock when closing because the goroutine might
-	// need the lock to exit out of what it's doing.
-
-	shutdown()
+	if shutdown != nil {
+		shutdown()
+	}
 	l.wg.Wait()
 }
 
