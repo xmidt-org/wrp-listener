@@ -38,7 +38,7 @@ The below code snippet gets you registered to the webhook and events flowing to 
 		panic(err)
 	}
 
-    err = l.Register(sharedSecrets[0])
+    err = l.Register(context.Background(), sharedSecrets[0])
 	if err != nil {
 		panic(err)
 	}

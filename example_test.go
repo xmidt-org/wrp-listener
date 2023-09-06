@@ -4,6 +4,7 @@
 package listener_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -105,7 +106,7 @@ func ExampleBasicAuth() { // nolint: govet
 
 	// Register for webhook events, using the secret "foobar" as the shared
 	// secret.
-	err = whl.Register("foobar")
+	err = whl.Register(context.Background(), "foobar")
 	if err != nil {
 		panic(err)
 	}
@@ -158,7 +159,7 @@ func ExampleBearerAuth() { // nolint: govet
 
 	// Register for webhook events, using the secret "foobar" as the shared
 	// secret.
-	err = whl.Register("foobar")
+	err = whl.Register(context.Background(), "foobar")
 	if err != nil {
 		panic(err)
 	}

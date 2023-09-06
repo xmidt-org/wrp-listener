@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -123,7 +124,7 @@ func main() {
 
 	// Register for webhook events, using the secret "foobar" as the shared
 	// secret.
-	err = whl.Register(sharedSecrets[0])
+	err = whl.Register(context.Background(), sharedSecrets[0])
 	if err != nil {
 		panic(err)
 	}

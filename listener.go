@@ -38,8 +38,6 @@ type Listener struct {
 	registrationOpts      []webhook.Option
 	interval              time.Duration
 	client                *http.Client
-	ctx                   context.Context
-	upstreamCtx           context.Context
 	shutdown              context.CancelFunc
 	update                chan struct{}
 	reqDecorators         []Decorator
@@ -76,8 +74,6 @@ func New(url string, r *webhook.Registration, opts ...Option) (*Listener, error)
 		registrationOpts: make([]webhook.Option, 0),
 		client:           http.DefaultClient,
 		reqDecorators:    make([]Decorator, 0),
-		upstreamCtx:      context.Background(),
-		ctx:              context.Background(),
 		update:           make(chan struct{}, 1),
 		acceptedSecrets:  make([]string, 0),
 		hashPreferences:  make([]string, 0),
@@ -168,7 +164,7 @@ func (l *Listener) dispatch(evnt any) error {
 // already running, the secret will be updated immediately.
 // If the secret is not provided, the current secret will be used.  Only the
 // first secret will be used if multiple secrets are provided.
-func (l *Listener) Register(secret ...string) error {
+func (l *Listener) Register(ctx context.Context, secret ...string) error {
 	l.m.Lock()
 	defer l.m.Unlock()
 
@@ -183,12 +179,12 @@ func (l *Listener) Register(secret ...string) error {
 	}
 
 	if l.interval == 0 {
-		_, err := l.register(true, time.Time{})
+		_, err := l.register(ctx, true, time.Time{})
 		return err
 	}
 
-	l.ctx, l.shutdown = context.WithCancel(l.upstreamCtx)
-	go l.run()
+	ctx, l.shutdown = context.WithCancel(ctx)
+	go l.run(ctx)
 
 	return nil
 }
@@ -237,7 +233,7 @@ func (l *Listener) Accept(secrets []string) {
 
 // run is the main loop for the webhook listener.  It will register the webhook
 // at the given interval until Stop() is called.
-func (l *Listener) run() {
+func (l *Listener) run(ctx context.Context) {
 	var presentExpiration time.Time
 	l.wg.Add(1)
 	defer l.wg.Done()
@@ -246,7 +242,7 @@ func (l *Listener) run() {
 	defer ticker.Stop()
 
 	for {
-		exp, err := l.register(false, presentExpiration)
+		exp, err := l.register(ctx, false, presentExpiration)
 		if err == nil {
 			presentExpiration = exp
 			ticker.Reset(l.interval)
@@ -256,7 +252,7 @@ func (l *Listener) run() {
 		}
 
 		select {
-		case <-l.ctx.Done():
+		case <-ctx.Done():
 			return
 
 		case <-ticker.C:
@@ -290,7 +286,7 @@ func (l *Listener) String() string {
 // register registers the webhook listener.  The newest secret will be used for
 // the registration.  The locked argument determines if a mutex is already held
 // by the caller to prevent deadlock.
-func (l *Listener) register(locked bool, presentExpiration time.Time) (time.Time, error) {
+func (l *Listener) register(ctx context.Context, locked bool, presentExpiration time.Time) (time.Time, error) {
 	// Keep the lock block as small as possible.  Copy out the values that are
 	// needed and release the lock.
 	if !locked {
@@ -308,7 +304,7 @@ func (l *Listener) register(locked bool, presentExpiration time.Time) (time.Time
 		Until: presentExpiration,
 	}
 
-	req, err := http.NewRequest(http.MethodPost, address, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, address, bytes.NewReader(body))
 	if err != nil {
 		evnt.Err = multierr.Combine(err, ErrNewRequestFailed, ErrRegistrationNotAttempted)
 		return time.Time{}, l.dispatch(evnt)
