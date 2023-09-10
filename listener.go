@@ -9,6 +9,7 @@ import (
 	"crypto/hmac"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/xmidt-org/webhook-schema"
 	"github.com/xmidt-org/wrp-listener/event"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -102,7 +102,7 @@ func New(url string, r *webhook.Registration, opts ...Option) (*Listener, error)
 
 	err := l.registration.Validate(vOpts...)
 	if err != nil {
-		return nil, multierr.Combine(err, fmt.Errorf("%w: invalid registration", ErrInput))
+		return nil, errors.Join(err, fmt.Errorf("%w: invalid registration", ErrInput))
 	}
 
 	err = l.use(l.registration.Config.Secret)
@@ -208,7 +208,7 @@ func (l *Listener) use(secret string) error {
 	var err error
 	l.body, err = json.Marshal(&l.registration)
 	if err != nil {
-		return multierr.Combine(err, fmt.Errorf("%w: unable to marshal the registration", ErrInput))
+		return errors.Join(err, fmt.Errorf("%w: unable to marshal the registration", ErrInput))
 	}
 
 	// Update the hash functions without blocking.
@@ -306,14 +306,14 @@ func (l *Listener) register(ctx context.Context, locked bool, presentExpiration 
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, address, bytes.NewReader(body))
 	if err != nil {
-		evnt.Err = multierr.Combine(err, ErrNewRequestFailed, ErrRegistrationNotAttempted)
+		evnt.Err = errors.Join(err, ErrNewRequestFailed, ErrRegistrationNotAttempted)
 		return time.Time{}, l.dispatch(evnt)
 	}
 
 	for _, decorator := range l.reqDecorators {
 		err := decorator.Decorate(req)
 		if err != nil {
-			evnt.Err = multierr.Combine(err, ErrDecoratorFailed, ErrRegistrationNotAttempted)
+			evnt.Err = errors.Join(err, ErrDecoratorFailed, ErrRegistrationNotAttempted)
 			return time.Time{}, l.dispatch(evnt)
 		}
 	}
@@ -325,7 +325,7 @@ func (l *Listener) register(ctx context.Context, locked bool, presentExpiration 
 	evnt.Duration = time.Since(evnt.At)
 
 	if err != nil {
-		evnt.Err = multierr.Combine(err, ErrRegistrationFailed)
+		evnt.Err = errors.Join(err, ErrRegistrationFailed)
 		return time.Time{}, l.dispatch(evnt)
 	}
 	defer resp.Body.Close()
@@ -373,14 +373,14 @@ func (l *Listener) Tokenize(r *http.Request) (*token, error) {
 		}
 		parts := strings.Split(header, "=")
 		if len(parts) != 2 {
-			evnt.Err = multierr.Combine(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
+			evnt.Err = errors.Join(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
 			return nil, l.dispatch(evnt)
 		}
 
 		alg := strings.ToLower(strings.TrimSpace(parts[0]))
 		val := strings.TrimSpace(parts[1])
 		if alg == "" || val == "" {
-			evnt.Err = multierr.Combine(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
+			evnt.Err = errors.Join(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
 			return nil, l.dispatch(evnt)
 		}
 
@@ -391,7 +391,7 @@ func (l *Listener) Tokenize(r *http.Request) (*token, error) {
 	evnt.Algorithms = list
 	best, err := l.best(list)
 	if err != nil {
-		evnt.Err = multierr.Combine(ErrInvalidTokenHeader, ErrAlgorithmNotFound)
+		evnt.Err = errors.Join(ErrInvalidTokenHeader, ErrAlgorithmNotFound)
 		return nil, l.dispatch(evnt)
 	}
 
@@ -412,7 +412,7 @@ func (l *Listener) Authorize(r *http.Request, t Token) error {
 
 	secret, err := hex.DecodeString(t.Principal())
 	if err != nil {
-		evnt.Err = multierr.Combine(err, ErrInvalidSignature)
+		evnt.Err = errors.Join(err, ErrInvalidSignature)
 		return l.dispatch(evnt)
 	}
 
@@ -421,7 +421,7 @@ func (l *Listener) Authorize(r *http.Request, t Token) error {
 		msg, err = io.ReadAll(r.Body)
 		r.Body.Close()
 		if err != nil {
-			evnt.Err = multierr.Combine(err, ErrUnableToReadBody)
+			evnt.Err = errors.Join(err, ErrUnableToReadBody)
 			return l.dispatch(evnt)
 		}
 

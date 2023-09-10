@@ -5,7 +5,6 @@ go 1.19
 require (
 	github.com/stretchr/testify v1.8.4
 	github.com/xmidt-org/webhook-schema v0.1.0
-	go.uber.org/multierr v1.11.0
 )
 
 require (
