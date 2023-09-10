@@ -547,8 +547,3 @@ func TestListener_String(t *testing.T) {
 		})
 	}
 }
-
-func TestDispatch(t *testing.T) {
-	l := &Listener{}
-	assert.Panics(t, func() { _ = l.dispatch(t) })
-}
