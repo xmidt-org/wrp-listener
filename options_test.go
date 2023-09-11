@@ -253,7 +253,7 @@ func TestWithAuthorizeEventListener(t *testing.T) {
 				defer m.Unlock()
 
 				count = 0
-				_ = l.dispatch(event.Authorize{})
+				_ = dispatch(l, event.Authorize{})
 				assert.Equal(1, count)
 			},
 		}, {
@@ -267,7 +267,7 @@ func TestWithAuthorizeEventListener(t *testing.T) {
 				cancel2()
 
 				count = 0
-				_ = l.dispatch(event.Authorize{})
+				_ = dispatch(l, event.Authorize{})
 				assert.Equal(0, count)
 			},
 		}, {
@@ -279,7 +279,7 @@ func TestWithAuthorizeEventListener(t *testing.T) {
 				defer m.Unlock()
 
 				count = 0
-				_ = l.dispatch(event.Authorize{})
+				_ = dispatch(l, event.Authorize{})
 				assert.Equal(1, count)
 			},
 		},
@@ -311,7 +311,7 @@ func TestWithTokenizeEventListener(t *testing.T) {
 				defer m.Unlock()
 
 				count = 0
-				_ = l.dispatch(event.Tokenize{})
+				_ = dispatch(l, event.Tokenize{})
 				assert.Equal(1, count)
 			},
 		}, {
@@ -325,7 +325,7 @@ func TestWithTokenizeEventListener(t *testing.T) {
 				cancel2()
 
 				count = 0
-				_ = l.dispatch(event.Tokenize{})
+				_ = dispatch(l, event.Tokenize{})
 				assert.Equal(0, count)
 			},
 		}, {
@@ -337,7 +337,7 @@ func TestWithTokenizeEventListener(t *testing.T) {
 				defer m.Unlock()
 
 				count = 0
-				_ = l.dispatch(event.Tokenize{})
+				_ = dispatch(l, event.Tokenize{})
 				assert.Equal(1, count)
 			},
 		},
@@ -370,7 +370,7 @@ func TestWithRegistrationEventListener(t *testing.T) {
 				defer m.Unlock()
 
 				count = 0
-				_ = l.dispatch(event.Registration{})
+				_ = dispatch(l, event.Registration{})
 				assert.Equal(1, count)
 			},
 		}, {
@@ -384,7 +384,7 @@ func TestWithRegistrationEventListener(t *testing.T) {
 				cancel2()
 
 				count = 0
-				_ = l.dispatch(event.Registration{})
+				_ = dispatch(l, event.Registration{})
 				assert.Equal(0, count)
 			},
 		}, {
@@ -396,7 +396,7 @@ func TestWithRegistrationEventListener(t *testing.T) {
 				defer m.Unlock()
 
 				count = 0
-				_ = l.dispatch(event.Registration{})
+				_ = dispatch(l, event.Registration{})
 				assert.Equal(1, count)
 			},
 		},

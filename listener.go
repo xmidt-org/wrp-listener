@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/xmidt-org/eventor"
 	"github.com/xmidt-org/webhook-schema"
 	"github.com/xmidt-org/wrp-listener/event"
 )
@@ -41,9 +42,9 @@ type Listener struct {
 	shutdown              context.CancelFunc
 	update                chan struct{}
 	reqDecorators         []Decorator
-	registrationListeners listeners
-	authorizeListeners    listeners
-	tokenizeListeners     listeners
+	registrationListeners eventor.Eventor[event.RegistrationListener]
+	authorizeListeners    eventor.Eventor[event.AuthorizeListener]
+	tokenizeListeners     eventor.Eventor[event.TokenizeListener]
 	opts                  []Option
 	body                  []byte
 	acceptedSecrets       []string
@@ -56,6 +57,13 @@ type Option interface {
 	fmt.Stringer
 	apply(*Listener) error
 }
+
+// CancelEventListenerFunc removes the listener it's associated with and cancels any
+// future events sent to that listener.
+//
+// A CancelEventListenerFunc is idempotent:  after the first invocation, calling this
+// closure will have no effect.
+type CancelEventListenerFunc func()
 
 // New creates a new webhook listener with the given registration and options.
 func New(url string, r *webhook.Registration, opts ...Option) (*Listener, error) {
@@ -117,45 +125,45 @@ func New(url string, r *webhook.Registration, opts ...Option) (*Listener, error)
 // The listener will be called for each event that occurs.  The returned
 // function can be called to remove the listener.
 func (l *Listener) AddRegistrationEventListener(listener event.RegistrationListener) CancelEventListenerFunc {
-	return l.registrationListeners.addListener(listener)
+	return CancelEventListenerFunc(l.registrationListeners.Add(listener))
 }
 
 // AddTokenizeEventListener adds an event listener to the webhook listener.
 // The listener will be called for each event that occurs.  The returned
 // function can be called to remove the listener.
 func (l *Listener) AddTokenizeEventListener(listener event.TokenizeListener) CancelEventListenerFunc {
-	return l.tokenizeListeners.addListener(listener)
+	return CancelEventListenerFunc(l.tokenizeListeners.Add(listener))
 }
 
 // AddAuthorizeEventListener adds an event listener to the webhook listener.
 // The listener will be called for each event that occurs.  The returned
 // function can be called to remove the listener.
 func (l *Listener) AddAuthorizeEventListener(listener event.AuthorizeListener) CancelEventListenerFunc {
-	return l.authorizeListeners.addListener(listener)
+	return CancelEventListenerFunc(l.authorizeListeners.Add(listener))
 }
 
 // dispatch dispatches the event to the listeners and returns the error that
 // should be returned by the caller.
-func (l *Listener) dispatch(evnt any) error {
-	switch evnt := evnt.(type) {
+func dispatch[T event.Authorize | event.Registration | event.Tokenize](l *Listener, evnt T) error {
+	var err error
+	switch evnt := any(evnt).(type) {
 	case event.Registration:
-		l.registrationListeners.visit(func(listener any) {
-			listener.(event.RegistrationListener).OnRegistrationEvent(evnt)
+		l.registrationListeners.Visit(func(listener event.RegistrationListener) {
+			listener.OnRegistrationEvent(evnt)
 		})
-		return evnt.Err
+		err = evnt.Err
 	case event.Tokenize:
-		l.tokenizeListeners.visit(func(listener any) {
-			listener.(event.TokenizeListener).OnTokenizeEvent(evnt)
+		l.tokenizeListeners.Visit(func(listener event.TokenizeListener) {
+			listener.OnTokenizeEvent(evnt)
 		})
-		return evnt.Err
+		err = evnt.Err
 	case event.Authorize:
-		l.authorizeListeners.visit(func(listener any) {
-			listener.(event.AuthorizeListener).OnAuthorizeEvent(evnt)
+		l.authorizeListeners.Visit(func(listener event.AuthorizeListener) {
+			listener.OnAuthorizeEvent(evnt)
 		})
-		return evnt.Err
+		err = evnt.Err
 	}
-
-	panic("unknown event type")
+	return err
 }
 
 // Register registers the webhook listener using the optional specified secret.
@@ -307,14 +315,14 @@ func (l *Listener) register(ctx context.Context, locked bool, presentExpiration 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, address, bytes.NewReader(body))
 	if err != nil {
 		evnt.Err = errors.Join(err, ErrNewRequestFailed, ErrRegistrationNotAttempted)
-		return time.Time{}, l.dispatch(evnt)
+		return time.Time{}, dispatch(l, evnt)
 	}
 
 	for _, decorator := range l.reqDecorators {
 		err := decorator.Decorate(req)
 		if err != nil {
 			evnt.Err = errors.Join(err, ErrDecoratorFailed, ErrRegistrationNotAttempted)
-			return time.Time{}, l.dispatch(evnt)
+			return time.Time{}, dispatch(l, evnt)
 		}
 	}
 
@@ -326,7 +334,7 @@ func (l *Listener) register(ctx context.Context, locked bool, presentExpiration 
 
 	if err != nil {
 		evnt.Err = errors.Join(err, ErrRegistrationFailed)
-		return time.Time{}, l.dispatch(evnt)
+		return time.Time{}, dispatch(l, evnt)
 	}
 	defer resp.Body.Close()
 
@@ -334,13 +342,13 @@ func (l *Listener) register(ctx context.Context, locked bool, presentExpiration 
 
 	if resp.StatusCode == http.StatusOK {
 		evnt.Until = evnt.At.Add(time.Duration(l.registration.Duration))
-		return evnt.Until, l.dispatch(evnt)
+		return evnt.Until, dispatch(l, evnt)
 	}
 
 	evnt.Body, _ = io.ReadAll(resp.Body)
 	evnt.Err = ErrRegistrationFailed
 
-	return time.Time{}, l.dispatch(evnt)
+	return time.Time{}, dispatch(l, evnt)
 }
 
 // Tokenize parses the token from the request header.  If the token is not found
@@ -374,14 +382,14 @@ func (l *Listener) Tokenize(r *http.Request) (*token, error) {
 		parts := strings.Split(header, "=")
 		if len(parts) != 2 {
 			evnt.Err = errors.Join(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
-			return nil, l.dispatch(evnt)
+			return nil, dispatch(l, evnt)
 		}
 
 		alg := strings.ToLower(strings.TrimSpace(parts[0]))
 		val := strings.TrimSpace(parts[1])
 		if alg == "" || val == "" {
 			evnt.Err = errors.Join(ErrInvalidTokenHeader, ErrInvalidHeaderFormat)
-			return nil, l.dispatch(evnt)
+			return nil, dispatch(l, evnt)
 		}
 
 		choices[alg] = val
@@ -392,11 +400,11 @@ func (l *Listener) Tokenize(r *http.Request) (*token, error) {
 	best, err := l.best(list)
 	if err != nil {
 		evnt.Err = errors.Join(ErrInvalidTokenHeader, ErrAlgorithmNotFound)
-		return nil, l.dispatch(evnt)
+		return nil, dispatch(l, evnt)
 	}
 
 	evnt.Algorithm = best
-	l.dispatch(evnt)
+	dispatch(l, evnt)
 	return newToken(best, choices[best]), nil
 }
 
@@ -407,13 +415,13 @@ func (l *Listener) Authorize(r *http.Request, t Token) error {
 
 	if t == nil {
 		evnt.Err = ErrNoToken
-		return l.dispatch(evnt)
+		return dispatch(l, evnt)
 	}
 
 	secret, err := hex.DecodeString(t.Principal())
 	if err != nil {
 		evnt.Err = errors.Join(err, ErrInvalidSignature)
-		return l.dispatch(evnt)
+		return dispatch(l, evnt)
 	}
 
 	var msg []byte
@@ -422,7 +430,7 @@ func (l *Listener) Authorize(r *http.Request, t Token) error {
 		r.Body.Close()
 		if err != nil {
 			evnt.Err = errors.Join(err, ErrUnableToReadBody)
-			return l.dispatch(evnt)
+			return dispatch(l, evnt)
 		}
 
 		// Reset the body so it can be read again later.
@@ -433,19 +441,19 @@ func (l *Listener) Authorize(r *http.Request, t Token) error {
 	hashes, err := l.getHashes(evnt.Algorithm)
 	if err != nil {
 		evnt.Err = err
-		return l.dispatch(evnt)
+		return dispatch(l, evnt)
 	}
 
 	for _, h := range hashes {
 		h.Write(msg)
 		if hmac.Equal(h.Sum(nil), secret) {
-			l.dispatch(evnt)
+			dispatch(l, evnt)
 			return nil
 		}
 	}
 
 	evnt.Err = ErrInvalidSignature
-	return l.dispatch(evnt)
+	return dispatch(l, evnt)
 }
 
 // best returns the best secret to use for the given choices.  If none of the

@@ -283,9 +283,9 @@ type withAuthorizeEventListenerOption struct {
 }
 
 func (a withAuthorizeEventListenerOption) apply(lis *Listener) error {
-	cancel := lis.authorizeListeners.addListener(a.lis)
+	cancel := lis.authorizeListeners.Add(a.lis)
 	if a.cancel != nil {
-		*a.cancel = cancel
+		*a.cancel = CancelEventListenerFunc(cancel)
 	}
 	return nil
 }
@@ -323,9 +323,9 @@ type withTokenizeEventListenerOption struct {
 }
 
 func (a withTokenizeEventListenerOption) apply(lis *Listener) error {
-	cancel := lis.tokenizeListeners.addListener(a.lis)
+	cancel := lis.tokenizeListeners.Add(a.lis)
 	if a.cancel != nil {
-		*a.cancel = cancel
+		*a.cancel = CancelEventListenerFunc(cancel)
 	}
 	return nil
 }
@@ -363,9 +363,9 @@ type withRegistrationEventListenerOption struct {
 }
 
 func (a withRegistrationEventListenerOption) apply(lis *Listener) error {
-	cancel := lis.registrationListeners.addListener(a.lis)
+	cancel := lis.registrationListeners.Add(a.lis)
 	if a.cancel != nil {
-		*a.cancel = cancel
+		*a.cancel = CancelEventListenerFunc(cancel)
 	}
 	return nil
 }
