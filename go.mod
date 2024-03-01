@@ -3,7 +3,7 @@ module github.com/xmidt-org/wrp-listener
 go 1.21.0
 
 require (
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/xmidt-org/eventor v0.0.0-20230910205925-8ff168bd12ed
 	github.com/xmidt-org/webhook-schema v0.1.0
 )
