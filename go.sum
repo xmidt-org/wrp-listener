@@ -11,8 +11,8 @@ github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRI
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/xmidt-org/eventor v1.0.16 h1:ktcxzNyOTc6gbI2kI2pg5w8KfxoZNsYuwXkAfbc08bU=
-github.com/xmidt-org/eventor v1.0.16/go.mod h1:NpaRwPEiiaB5oEdFI41o6Lf4iQHAVwCdtwKb3z7R8mY=
+github.com/xmidt-org/eventor v1.0.17 h1:GBZ2hU5rNtEV/vjkG2i8PGbN1TcP76e5CQiuPblf7vg=
+github.com/xmidt-org/eventor v1.0.17/go.mod h1:NpaRwPEiiaB5oEdFI41o6Lf4iQHAVwCdtwKb3z7R8mY=
 github.com/xmidt-org/urlegit v0.1.0 h1:WZLlWo0e5JNZabLEi7/1+sK/np9qrH9XnoB+ZdsHieM=
 github.com/xmidt-org/urlegit v0.1.0/go.mod h1:ih/VtgW3xfpV7FNIrHUpNdP0GapcfLOND8y0JwH51vA=
 github.com/xmidt-org/webhook-schema v0.1.0 h1:QYutPymtGd6OvukVHTDwpQIEvmk5uNnN8CgbppS089A=
