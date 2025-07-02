@@ -65,7 +65,7 @@ func (el *eventListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func ExampleBasicAuth() { // nolint: govet
+func Example_eventListener_BasicAuth() { // nolint: govet
 	server := startFakeListener()
 	defer server.Close()
 
@@ -114,7 +114,7 @@ func ExampleBasicAuth() { // nolint: govet
 	// Output:
 }
 
-func ExampleBearerAuth() { // nolint: govet
+func Example_eventListener_BearerAuth() { // nolint: govet
 	server := startFakeListener()
 	defer server.Close()
 
