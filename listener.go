@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/xmidt-org/eventor"
-	"github.com/xmidt-org/webhook-schema"
+	webhook "github.com/xmidt-org/webhook-schema"
 	"github.com/xmidt-org/wrp-listener/event"
 )
 
