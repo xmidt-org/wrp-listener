@@ -13,10 +13,10 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/xmidt-org/eventor v1.0.43 h1:Z7YEF46PpjBOE0vd8q5VjbmgGhmIUnWjs1DBrXaRDko=
 github.com/xmidt-org/eventor v1.0.43/go.mod h1:hDYVga+QLP8ZfwIBtmDvXRtYbY2dPa6i0PNQrqtwYUg=
-github.com/xmidt-org/urlegit v0.1.0 h1:WZLlWo0e5JNZabLEi7/1+sK/np9qrH9XnoB+ZdsHieM=
-github.com/xmidt-org/urlegit v0.1.0/go.mod h1:ih/VtgW3xfpV7FNIrHUpNdP0GapcfLOND8y0JwH51vA=
-github.com/xmidt-org/webhook-schema v0.1.0 h1:QYutPymtGd6OvukVHTDwpQIEvmk5uNnN8CgbppS089A=
-github.com/xmidt-org/webhook-schema v0.1.0/go.mod h1:x3G1lmhryIbr6QXLyzagVkcfY1ZhBxGlP0CdvRD3zZI=
+github.com/xmidt-org/urlegit v0.1.28 h1:kgDOcwmwLkFybR0A3kN8Ugs+it6iJaAUgiPcqT94u9I=
+github.com/xmidt-org/urlegit v0.1.28/go.mod h1:YnYBS5TOiP2PQsEE8+DHtRPwJnXeBucf4Be9tTOTRPM=
+github.com/xmidt-org/webhook-schema v0.2.0 h1:ZZ4mIHusP4ndjaY+m0+07zxg38Lvg7d5ARJAUuwocLo=
+github.com/xmidt-org/webhook-schema v0.2.0/go.mod h1:xAMIltqA3w7c+8eWtp+qlBZ42mBZ/A6pDcDpt6cj4dU=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
