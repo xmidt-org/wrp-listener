@@ -50,12 +50,12 @@ func (r Registration) String() string {
 	buf := strings.Builder{}
 
 	buf.WriteString("event.Registration{\n")
-	buf.WriteString(fmt.Sprintf("  At:         %s\n", r.At.Format(time.RFC3339)))
-	buf.WriteString(fmt.Sprintf("  Duration:   %s\n", r.Duration.String()))
-	buf.WriteString(fmt.Sprintf("  Body:       '%s'\n", string(r.Body)))
-	buf.WriteString(fmt.Sprintf("  StatusCode: %d\n", r.StatusCode))
-	buf.WriteString(fmt.Sprintf("  Until:      %s\n", r.Until.Format(time.RFC3339)))
-	buf.WriteString(fmt.Sprintf("  Err:        %v\n", r.Err))
+	fmt.Fprintf(&buf, "  At:         %s\n", r.At.Format(time.RFC3339))
+	fmt.Fprintf(&buf, "  Duration:   %s\n", r.Duration.String())
+	fmt.Fprintf(&buf, "  Body:       '%s'\n", string(r.Body))
+	fmt.Fprintf(&buf, "  StatusCode: %d\n", r.StatusCode)
+	fmt.Fprintf(&buf, "  Until:      %s\n", r.Until.Format(time.RFC3339))
+	fmt.Fprintf(&buf, "  Err:        %v\n", r.Err)
 	buf.WriteString("}\n")
 
 	return buf.String()
@@ -96,10 +96,10 @@ func (t Tokenize) String() string {
 	buf := strings.Builder{}
 
 	buf.WriteString("event.Tokenize{\n")
-	buf.WriteString(fmt.Sprintf("  Header:     '%s'\n", t.Header))
-	buf.WriteString(fmt.Sprintf("  Algorithms: [%s]\n", strings.Join(t.Algorithms, ", ")))
-	buf.WriteString(fmt.Sprintf("  Algorithm:  '%s'\n", t.Algorithm))
-	buf.WriteString(fmt.Sprintf("  Err:        %v\n", t.Err))
+	fmt.Fprintf(&buf, "  Header:     '%s'\n", t.Header)
+	fmt.Fprintf(&buf, "  Algorithms: [%s]\n", strings.Join(t.Algorithms, ", "))
+	fmt.Fprintf(&buf, "  Algorithm:  '%s'\n", t.Algorithm)
+	fmt.Fprintf(&buf, "  Err:        %v\n", t.Err)
 	buf.WriteString("}\n")
 
 	return buf.String()
@@ -133,8 +133,8 @@ func (a Authorize) String() string {
 	buf := strings.Builder{}
 
 	buf.WriteString("event.Authorize{\n")
-	buf.WriteString(fmt.Sprintf("  Algorithm:  '%s'\n", a.Algorithm))
-	buf.WriteString(fmt.Sprintf("  Err:        %v\n", a.Err))
+	fmt.Fprintf(&buf, "  Algorithm:  '%s'\n", a.Algorithm)
+	fmt.Fprintf(&buf, "  Err:        %v\n", a.Err)
 	buf.WriteString("}\n")
 
 	return buf.String()

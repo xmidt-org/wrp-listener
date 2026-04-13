@@ -57,7 +57,7 @@ func main() {
 	contentType := strings.TrimSpace(os.Getenv("WEBHOOK_CONTENT_TYPE"))
 	events := strings.TrimSpace(os.Getenv("WEBHOOK_EVENTS"))
 
-	useTLS := false
+	var useTLS bool
 	if certFile != "" && keyFile != "" {
 		useTLS = true
 	}
