@@ -2,9 +2,9 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/xmidt-org/eventor v1.0.51 h1:9hIbcsQ/dk/z2+ISOUsA7CcTWeYUoS9DAz0Sk/Ft1hw=
 github.com/xmidt-org/eventor v1.0.51/go.mod h1:7h3vQdzWfSxq1Icdg5oGAzuYL+efm20UnZIRLyimL+g=
-github.com/xmidt-org/urlegit v0.1.0 h1:WZLlWo0e5JNZabLEi7/1+sK/np9qrH9XnoB+ZdsHieM=
-github.com/xmidt-org/urlegit v0.1.0/go.mod h1:ih/VtgW3xfpV7FNIrHUpNdP0GapcfLOND8y0JwH51vA=
-github.com/xmidt-org/webhook-schema v0.1.0 h1:QYutPymtGd6OvukVHTDwpQIEvmk5uNnN8CgbppS089A=
-github.com/xmidt-org/webhook-schema v0.1.0/go.mod h1:x3G1lmhryIbr6QXLyzagVkcfY1ZhBxGlP0CdvRD3zZI=
+github.com/xmidt-org/urlegit v0.1.31 h1:1e1SKFG5v9xjEUZrZpkkN6Njc4EefIJpaO0tEou4ThY=
+github.com/xmidt-org/urlegit v0.1.31/go.mod h1:dBxr5GgVGhASxE7hFZuuN/oTL41VGJiiMRbHj/4Cb5c=
+github.com/xmidt-org/webhook-schema v0.2.6 h1:IuFbgzmBAao8fAvbHuED/8G/9DKBqQJ1MX86aV1miaU=
+github.com/xmidt-org/webhook-schema v0.2.6/go.mod h1:CW38BBM0LbucZVcEuaGJd/TpC3rkbscgNjKhMI+Hj5o=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
 go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=
