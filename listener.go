@@ -353,7 +353,7 @@ func (l *Listener) register(ctx context.Context, locked bool, presentExpiration 
 
 // Tokenize parses the token from the request header.  If the token is not found
 // or is invalid, an error is returned.
-func (l *Listener) Tokenize(r *http.Request) (*token, error) {
+func (l *Listener) Tokenize(r *http.Request) (Token, error) {
 	evnt := event.Tokenize{
 		Header: xmidtHeader,
 	}
