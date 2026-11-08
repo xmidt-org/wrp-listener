@@ -404,7 +404,7 @@ func (l *Listener) Tokenize(r *http.Request) (*token, error) {
 	}
 
 	evnt.Algorithm = best
-	dispatch(l, evnt)
+	_ = dispatch(l, evnt) // evnt.Err is nil here
 	return newToken(best, choices[best]), nil
 }
 
@@ -445,9 +445,9 @@ func (l *Listener) Authorize(r *http.Request, t Token) error {
 	}
 
 	for _, h := range hashes {
-		h.Write(msg)
+		_, _ = h.Write(msg) // hash.Hash writes never return an error
 		if hmac.Equal(h.Sum(nil), secret) {
-			dispatch(l, evnt)
+			_ = dispatch(l, evnt) // evnt.Err is nil here
 			return nil
 		}
 	}

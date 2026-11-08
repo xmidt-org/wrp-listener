@@ -4,7 +4,7 @@
 package listener
 
 import (
-	"crypto/sha1" //nolint:gosec
+	"crypto/sha1" //nolint:gosec // SHA1 is supported for legacy webhook signers
 	"crypto/sha256"
 	"fmt"
 	"hash"

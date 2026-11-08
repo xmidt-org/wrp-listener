@@ -65,7 +65,7 @@ func (el *eventListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func Example_eventListener_BasicAuth() { // nolint: govet
+func Example_eventListener_BasicAuth() {
 	server := startFakeListener()
 	defer server.Close()
 
@@ -98,7 +98,7 @@ func Example_eventListener_BasicAuth() { // nolint: govet
 	}
 
 	go func() {
-		err := http.ListenAndServe(":8080", &el) // nolint: gosec
+		err := http.ListenAndServe(":8080", &el) //nolint:gosec // example server without timeouts
 		if err != nil {
 			panic(err)
 		}
@@ -114,7 +114,7 @@ func Example_eventListener_BasicAuth() { // nolint: govet
 	// Output:
 }
 
-func Example_eventListener_BearerAuth() { // nolint: govet
+func Example_eventListener_BearerAuth() {
 	server := startFakeListener()
 	defer server.Close()
 
@@ -151,7 +151,7 @@ func Example_eventListener_BearerAuth() { // nolint: govet
 	}
 
 	go func() {
-		err := http.ListenAndServe(":8081", &el) // nolint: gosec
+		err := http.ListenAndServe(":8081", &el) //nolint:gosec // example server without timeouts
 		if err != nil {
 			panic(err)
 		}

@@ -110,12 +110,12 @@ func main() {
 
 	go func() {
 		if useTLS {
-			err := http.ListenAndServeTLS(localAddress, certFile, keyFile, &el) // nolint: gosec
+			err := http.ListenAndServeTLS(localAddress, certFile, keyFile, &el) //nolint:gosec // example server without timeouts
 			if err != nil {
 				panic(err)
 			}
 		} else {
-			err := http.ListenAndServe(localAddress, &el) // nolint: gosec
+			err := http.ListenAndServe(localAddress, &el) //nolint:gosec // example server without timeouts
 			if err != nil {
 				panic(err)
 			}

@@ -4,7 +4,7 @@
 package listener
 
 import (
-	"crypto/sha1" //nolint:gosec
+	"crypto/sha1" //nolint:gosec // SHA1 is supported for legacy webhook signers
 	"crypto/sha256"
 	"net/http"
 	"sync"
@@ -179,7 +179,7 @@ func TestHashes(t *testing.T) {
 			opt:         AcceptSHA1(),
 			check: func(assert *assert.Assertions, l *Listener) {
 				got := l.hashes["sha1"]()
-				want := sha1.New() //nolint:gosec
+				want := sha1.New() //nolint:gosec // matches legacy SHA1 support
 				assert.Equal(want, got)
 			},
 		}, {

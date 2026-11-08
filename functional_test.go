@@ -6,10 +6,11 @@ package listener
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -42,11 +43,8 @@ func TestNormalUsage(t *testing.T) {
 				found := false
 				m.Lock()
 				defer m.Unlock()
-				for _, s := range expectSecret {
-					if s == reg.Config.Secret {
-						found = true
-						break
-					}
+				if slices.Contains(expectSecret, reg.Config.Secret) {
+					found = true
 				}
 
 				assert.True(found)
@@ -78,18 +76,18 @@ func TestNormalUsage(t *testing.T) {
 
 	// Register the webhook before has started
 	err = whl.Register(ctx, "secret1")
-	assert.NoError(err)
+	require.NoError(err)
 
 	err = whl.Register(ctx, "secret1")
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Register the webhook.
 	err = whl.Register(ctx)
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Re-register because it could happen.
 	err = whl.Register(ctx)
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Wait a bit then roll the secret..
 	time.Sleep(time.Millisecond)
@@ -98,7 +96,7 @@ func TestNormalUsage(t *testing.T) {
 	m.Unlock()
 
 	err = whl.Register(ctx, "secret2")
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Wait a bit then remove the prior secret from the list of accepted secrets.
 	time.Sleep(time.Millisecond)
@@ -136,11 +134,8 @@ func TestNormalUsageCancelWithContext(t *testing.T) {
 				found := false
 				m.Lock()
 				defer m.Unlock()
-				for _, s := range expectSecret {
-					if s == reg.Config.Secret {
-						found = true
-						break
-					}
+				if slices.Contains(expectSecret, reg.Config.Secret) {
+					found = true
 				}
 
 				assert.True(found)
@@ -171,7 +166,7 @@ func TestNormalUsageCancelWithContext(t *testing.T) {
 	require.NoError(err)
 
 	err = whl.Register(ctx, "secret1")
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Wait a bit then roll the secret..
 	time.Sleep(time.Millisecond)
@@ -186,7 +181,7 @@ func TestNormalUsageCancelWithContext(t *testing.T) {
 
 	// This should not restart.
 	err = whl.Register(ctx)
-	assert.NoError(err)
+	require.NoError(err)
 
 	// This should not block.
 	whl.wg.Wait()
@@ -213,11 +208,8 @@ func TestSingleShotUsage(t *testing.T) {
 
 				found := false
 				m.Lock()
-				for _, s := range expectSecret {
-					if s == reg.Config.Secret {
-						found = true
-						break
-					}
+				if slices.Contains(expectSecret, reg.Config.Secret) {
+					found = true
 				}
 				m.Unlock()
 
@@ -262,11 +254,11 @@ func TestSingleShotUsage(t *testing.T) {
 
 	// Register the webhook.
 	err = whl.Register(ctx)
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Re-register because it could happen.
 	err = whl.Register(ctx)
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Wait a bit then roll the secret..
 	time.Sleep(10 * time.Millisecond)
@@ -275,13 +267,13 @@ func TestSingleShotUsage(t *testing.T) {
 	m.Unlock()
 
 	err = whl.Register(ctx, "secret2")
-	assert.NoError(err)
+	require.NoError(err)
 
 	err = whl.Register(ctx, "secret3")
-	assert.NoError(err)
+	require.NoError(err)
 
 	err = whl.Register(ctx, "secret4")
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Wait a bit then remove the prior secret from the list of accepted secrets.
 	time.Sleep(10 * time.Millisecond)
@@ -303,7 +295,7 @@ func TestFailedHTTPCall(t *testing.T) {
 
 	server := httptest.NewServer(
 		http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
+			func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 			},
 		),
@@ -358,8 +350,8 @@ func TestFailedAuthCheck(t *testing.T) {
 			Duration: webhook.CustomDuration(5 * time.Minute),
 		},
 		DecorateRequest(
-			DecoratorFunc(func(r *http.Request) error {
-				return fmt.Errorf("nope")
+			DecoratorFunc(func(_ *http.Request) error {
+				return errors.New("nope")
 			}),
 		),
 	)
@@ -372,7 +364,7 @@ func TestFailedAuthCheck(t *testing.T) {
 			assert.Zero(e.StatusCode)
 			assert.Zero(e.At)
 			assert.Zero(e.Duration)
-			assert.ErrorIs(e.Err, ErrRegistrationNotAttempted)
+			require.ErrorIs(e.Err, ErrRegistrationNotAttempted)
 			assert.ErrorIs(e.Err, ErrDecoratorFailed)
 		}))
 
@@ -404,7 +396,7 @@ func TestFailedNewRequest(t *testing.T) {
 				assert.Zero(e.StatusCode)
 				assert.Zero(e.At)
 				assert.Zero(e.Duration)
-				assert.ErrorIs(e.Err, ErrRegistrationNotAttempted)
+				require.ErrorIs(e.Err, ErrRegistrationNotAttempted)
 				assert.ErrorIs(e.Err, ErrNewRequestFailed)
 			})),
 	)
@@ -439,7 +431,7 @@ func TestCancelListener(t *testing.T) {
 	require.NoError(err)
 
 	cancel := whl.AddRegistrationEventListener(event.RegistrationFunc(
-		func(e event.Registration) {
+		func(_ event.Registration) {
 			assert.Fail("should not have been called")
 		}))
 
@@ -457,7 +449,7 @@ func TestFailedConnect(t *testing.T) {
 
 	server := httptest.NewServer(
 		http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
+			func(_ http.ResponseWriter, _ *http.Request) {
 				time.Sleep(10 * time.Millisecond)
 			},
 		),
@@ -557,7 +549,7 @@ func TestFailsAfterABit(t *testing.T) {
 
 	// Register the webhook before has started
 	err = whl.Register(context.Background())
-	assert.NoError(err)
+	require.NoError(err)
 
 	// Wait a bit then roll the secret..
 	time.Sleep(10 * time.Millisecond)

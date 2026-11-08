@@ -22,7 +22,7 @@ type newTest struct {
 	description    string
 	r              webhook.Registration
 	noRegistration bool
-	noUrl          bool
+	noURL          bool
 	opt            Option
 	opts           []Option
 	check          vador
@@ -57,7 +57,7 @@ func TestNew(t *testing.T) {
 		}, {
 			description: "no url fails",
 			r:           validWHR,
-			noUrl:       true,
+			noURL:       true,
 			expectedErr: ErrInput,
 		}, {
 			description:    "nil registration fails",
@@ -88,6 +88,7 @@ func TestNew(t *testing.T) {
 }
 
 func commonNewTest(t *testing.T, tests []newTest) {
+	t.Helper()
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
@@ -98,7 +99,7 @@ func commonNewTest(t *testing.T, tests []newTest) {
 			opts = append(opts, tc.opt)
 			opts = append(opts, tc.opts...)
 			url := "http://example.com"
-			if tc.noUrl {
+			if tc.noURL {
 				url = ""
 			}
 			rPtr := &r
@@ -289,7 +290,7 @@ func TestTokenize(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			opts := append(tc.opts, tc.opt)
+			opts := append(append([]Option{}, tc.opts...), tc.opt)
 			whl, err := New(
 				"http://example.com",
 				&webhook.Registration{
@@ -321,7 +322,7 @@ func TestTokenize(t *testing.T) {
 				return
 			}
 
-			assert.NoError(err)
+			require.NoError(err)
 			require.NotNil(got)
 			assert.Equal(tc.expected.Type(), got.Type())
 			assert.Equal(tc.expected.Principal(), got.Principal())
@@ -437,7 +438,7 @@ func TestAuthorize(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			opts := append(tc.opts, tc.opt)
+			opts := append(append([]Option{}, tc.opts...), tc.opt)
 			whl, err := New(
 				"http://example.com",
 				&webhook.Registration{
@@ -496,7 +497,7 @@ func TestListener_Accept(t *testing.T) {
 			require := require.New(t)
 
 			r := validWHR
-			opts := append(tc.opts, tc.opt)
+			opts := append(append([]Option{}, tc.opts...), tc.opt)
 			l, err := New("http://example.com", &r, opts...)
 			require.NotNil(l)
 			require.NoError(err)
@@ -538,7 +539,7 @@ func TestListener_String(t *testing.T) {
 			require := require.New(t)
 
 			r := validWHR
-			opts := append(tc.opts, tc.opt)
+			opts := append(append([]Option{}, tc.opts...), tc.opt)
 			l, err := New("http://example.com", &r, opts...)
 			require.NotNil(l)
 			require.NoError(err)
