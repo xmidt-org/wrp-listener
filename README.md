@@ -5,14 +5,13 @@ function to be used for authentication.
 
 [![Build Status](https://github.com/xmidt-org/wrp-listener/actions/workflows/ci.yml/badge.svg)](https://github.com/xmidt-org/wrp-listener/actions/workflows/ci.yml)
 [![codecov.io](http://codecov.io/github/xmidt-org/wrp-listener/coverage.svg?branch=main)](http://codecov.io/github/xmidt-org/wrp-listener?branch=main)
-[![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-listener)](https://goreportcard.com/report/github.com/xmidt-org/wrp-listener)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-listener/blob/main/LICENSE)
 [![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-listener.svg)](https://github.com/xmidt-org/wrp-listener/releases)
 [![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-listener)](https://pkg.go.dev/github.com/xmidt-org/wrp-listener)
 
 ## Summary
 
-`wrp-listener`` provides a package to help a consumer register to a webhook and 
+`wrp-listener` provides a package to help a consumer register to a webhook and 
 authenticate messages received.  Registering to a webhook can be done directly 
 or set up to run at an interval.
 
@@ -44,7 +43,7 @@ The below code snippet gets you registered to the webhook and events flowing to 
 	}
 ```
 
-Authorization that the information from the webhook likstener provider is also
+Authorization that the information from the webhook listener provider is also
 pretty simple.
 
 ```golang
